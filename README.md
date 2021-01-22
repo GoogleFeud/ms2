@@ -124,6 +124,8 @@ PUSH_32 40 48 f5 c3 // Push 3.14 to the stack
 LET 0x0 0x1 // Define variable 
 ```
 
+**The let op code doesn't pop the last element in the stack**
+
 Variable names are translated from strings to a unsigned 16-bit number. The variable value is pushed to the stack beforehand. That means that there are **65535** possible variables. Variable names are incremented, so the first declared variable will have the name `0`, then `1`, and so on.
 
 That makes importing global variables a lot harder, that's why you should compile the code and run the code with the **same set of global variables**:
@@ -262,39 +264,13 @@ if (b == true) {
 
 ```
 PUSH_VAR 0x0 0x5
-IF // If the last pushed value is truthy, do the following, otherwise skip until the END_IF OP CODE
+IF_BLOCK 0x0 0xF // If the last pushed value is truthy, do the following, otherwise skip to the provided offset
 PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
 CALL .... // Call the imaginary print function
 END_IF
 ```
 
-### If else
-
-```
-if (b == true) {
-    print("Hello World");
-} else if (a == true) {
-    print("No hello world");
-} else print("RIp");
-```
-
-```
-PUSH_VAR 0x0 0x5
-IF 
-PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
-CALL ....
-END_IF // The if statement itself pushes if it got executed or not
-PUSH_VAR 0x0 0x4
-AND // Check if the last if statement returned true, and if this one also returned true
-IF
-PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
-CALL ....
-END_IF
-ELSE 
-PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
-CALL ....
-END_IF
-```
+**The IF OP pushes the OPPOSITE result of the condition, which makes chaining if statements way easier**
 
 ### Ternery
 
