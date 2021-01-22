@@ -227,26 +227,22 @@ describe("Op Codes", () => {
 
     it("IF (Else)", () => {
         const code = Buffer.from([
-            OP_CODES.PUSH_UNDEFINED,
-            OP_CODES.LET, 0x0, 0x1,
-            OP_CODES.PUSH_VAR, 0x0, 0x0,
-            OP_CODES.IF_BLOCK_START, 0x0, 0x6,
+            OP_CODES.PUSH_UNDEFINED, OP_CODES.LET, 0x0, 0x1, // let a;
+            OP_CODES.PUSH_VAR, 0x0, 0x0, // Push the variable "0" to the stack
+            OP_CODES.GOTO_FALSE, 0x0, 0x5, // If the last pushed value is falsey, jump 5 bytes ahead
             OP_CODES.PUSH_8, 0x9,
             OP_CODES.ASSIGN, 0x0, 0x1,
-            OP_CODES.IF_BLOCK_END,
-            OP_CODES.IF_BLOCK_START, 0x0, 0x6,
             OP_CODES.PUSH_8, 0x5,
             OP_CODES.ASSIGN, 0x0, 0x1,
-            OP_CODES.IF_BLOCK_END,
             OP_CODES.END
         ]);
         Evaler.clear();
-        Evaler.global.define(0, false);
+        Evaler.global.define(0, true);
         Evaler.interpret(code);
         expect(Evaler.global.get(1)).to.be.equal(5);
     });
 
-    it("IF (Else If, Else)", () => {
+    /**  it("IF (Else If, Else)", () => {
         const code = Buffer.from([
             OP_CODES.PUSH_UNDEFINED, OP_CODES.LET, 0x0, 0x1, // let res = undefined;
             OP_CODES.PUSH_STR, 0x0, 0x2, 0x6e, 0x6f, OP_CODES.PUSH_VAR, 0x0, 0x0, OP_CODES.EQUAL, OP_CODES.IF_BLOCK_START, 0x0, 0x6, // if (a === "no") {
@@ -261,7 +257,7 @@ describe("Op Codes", () => {
             OP_CODES.IF_BLOCK_END,
             OP_CODES.END
         ]);
-        /**
+
          * Same as:
          * if (a === "no") {
          *    res = 9;
@@ -270,13 +266,12 @@ describe("Op Codes", () => {
          * } else {
          *    res = 3;
          * }
-         */
 
         Evaler.clear();
         Evaler.global.define(0, "no");
         Evaler.interpret(code);
         expect(Evaler.global.get(1)).to.be.equal(9);
-    }); 
+    }); */
 
 });
 

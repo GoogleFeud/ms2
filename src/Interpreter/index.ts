@@ -20,9 +20,7 @@ export const enum OP_CODES {
     ASSIGN,
     FN_START,
     FN_END,
-    IF_BLOCK_START,
-    ELSE_IF_BLOCK_START,
-    IF_BLOCK_END,
+    GOTO_FALSE,
     RTRN,
     ELSE,
     CALL,
@@ -153,15 +151,10 @@ export class Interpreter {
                 env.set(code.readInt16BE(address), this.stack.pop());
                 address += 2;
                 break;
-            case OP_CODES.IF_BLOCK_START: {
-                const bool = Boolean(this.stack.pop());
-                const sizeOfIf = code.readInt16BE(address);
-                address += 2;
-                if (bool) address = this.interpret(code, env, address, OP_CODES.IF_BLOCK_END);
-                else address += sizeOfIf;
-                this.stack.push(!bool);
+            case OP_CODES.GOTO_FALSE:
+                if (!this.stack.pop()) address += code.readInt16BE(address) + 2;
+                else address += 2;
                 break;
-            }
             case OP_CODES.BREAKPOINT: {
                 this.pausedAt = address;
                 if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(code, env, this.pausedAt, endByte);
