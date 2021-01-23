@@ -1,19 +1,37 @@
 
-Programming language to create and extend mafia roles. Translates source code to bytecode which can be easily stored in a database for faster execution.
+A programming language. Translates source code to bytecode which can be easily executed without the source code. 
 
 # Table of contents
 
-...
+- Compiler bytecode
+    - [Number Operations](https://github.com/GoogleFeud/ms2#math--numbers)
+    - [Booleans](https://github.com/GoogleFeud/ms2#booleans)
+    - [Strings](https://github.com/GoogleFeud/ms2#strings)
+    - [Arrays](https://github.com/GoogleFeud/ms2#array-literals)
+    - [Objects](https://github.com/GoogleFeud/ms2#object-literals)
+    - [Variables](https://github.com/GoogleFeud/ms2#variables)
+    - [Property Access](https://github.com/GoogleFeud/ms2#property-access)
+    - [Functions](https://github.com/GoogleFeud/ms2#functions)
+    - [Call](https://github.com/GoogleFeud/ms2#calling)
+    - [Exporting](https://github.com/GoogleFeud/ms2#exporting)
+    - Logic
+        - [Or](https://github.com/GoogleFeud/ms2#or)
+        - [And](https://github.com/GoogleFeud/ms2#and)
+        - [Comparisons](https://github.com/GoogleFeud/ms2#logic-comparisons)
+        - [Not](https://github.com/GoogleFeud/ms2#not)
+        - [If](https://github.com/GoogleFeud/ms2#if)
+        - [If-Else-If-Else](https://github.com/GoogleFeud/ms2#if---else-if---else)
 
-## Programming language / byte code translation
+## Compiler to bytecode
 
 ### Math / numbers
 
 ```1 + 1```
 
 ```
-PUSH_32 0x0 0x0 0x0 0x1
-ADD_32 0x0 0x0 0x0 0x1
+PUSH_8 0x1
+PUSH_8 0x1
+ADD
 ```
 
 _________________________________
@@ -21,21 +39,23 @@ _________________________________
 ```1 + 10 / 2```
 
 ```
-PUSH_32 0x0 0x0 0x0 0xA // push 10 to stack
-DIV_32 0x0 0x0 0x0 0x2 // divide 10 by 2
-ADD_32 0x0 0x0 0x0 0x1 // add 1 to 5
+PUSH_8 0xA // push 10 to stack
+PUSH_8 0x2 // divide 10 by 2
+DIV
+PUSH_8 0x0 0x0 0x0 0x1
+ADD
 ```
 
 __________________________________
 
-**Other OP codes related to numbers:** `PUSH_8`, `PUSH_16`, `ADD_8`, `ADD_16`, `DIV_8`, `DIV_16`, `MUL_X`, `SUB_X`
+**Other OP codes related to numbers:** `PUSH_32`, `PUSH_16`, `MUL`, `SUB`
 
 ### Booleans
 
 ```true```
 
 ```
-PUSH_8 0x1
+PUSH_BOOL 0x1
 ```
 
 _________________________________
@@ -48,8 +68,6 @@ _________________________________
 ```
 PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
 ```
-
-Adds the string "Hello World" to the string pool and pushes a unique string id to the stack that represents the string literal (and all matching string literals)
 
 ### Array literals
 

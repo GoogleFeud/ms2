@@ -18,7 +18,7 @@
     "ts-node": "^9.1.1"
   },
   "scripts": {
-    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "test": "mocha -r ts-node/register 'tests/**/*.ts' --slow 0",
     "start": "tsc && node ."
   },
   "repository": {

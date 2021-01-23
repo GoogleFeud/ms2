@@ -121,6 +121,19 @@ describe("Op Codes", () => {
         expect(Evaler.stack.pop()).to.be.equal(8);
     });
 
+    it("ARITHMETIC", () => {
+        const code = Buffer.from([
+            OP_CODES.PUSH_8, 0xA,
+            OP_CODES.PUSH_8, 0x2,
+            OP_CODES.DIV,
+            OP_CODES.PUSH_8, 0x1,
+            OP_CODES.ADD,
+            OP_CODES.END 
+        ]);
+        Evaler.clear().interpret(code);
+        expect(Evaler.stack.pop()).to.be.equal(6);
+    });
+
     it("EQUAL", () => {
         let code = Buffer.from([
             OP_CODES.PUSH_8, 0x10,
@@ -245,11 +258,11 @@ describe("Op Codes", () => {
             /**0 */ OP_CODES.PUSH_VAR, 0x0, 0x0, // Push variable 0 to stack
             /**1 */ OP_CODES.PUSH_STR, 0x0, 0x3, 0x79, 0x65, 0x73, // Push string "yes" to stack,
             /**2 */ OP_CODES.EQUAL, // Check if the value in variable 0 is equal to "yes"
-            /**3 */ OP_CODES.JUMP_TRUE, 0x0, 0x16, // If they are equal, execute the code on line 10
+            /**3 */ OP_CODES.JUMP_TRUE, 0x0, 0x16, // If they are equal, execute the code on line 12
             /**4 */ OP_CODES.PUSH_VAR, 0x0, 0x0,
             /**5 */ OP_CODES.PUSH_STR, 0x0, 0x2, 0x6e, 0x6f,
             /**6 */ OP_CODES.EQUAL,
-            /* 7 */ OP_CODES.JUMP_TRUE, 0x0, 0x5,
+            /* 7 */ OP_CODES.JUMP_TRUE, 0x0, 0x5, // if 0 === "no" jump to 10
             /* 8 */ OP_CODES.PUSH_8, 0x3, // if var 0 not equal to "no" or "yes", push 3 to stack
             /* 9 */ OP_CODES.JUMP, 0x0, 0x7,
             /* 10 */ OP_CODES.PUSH_8, 0x2, // if var 0 === "no" push 2 to stack.
@@ -266,11 +279,6 @@ describe("Op Codes", () => {
          * else push 3;
          * push 4;
          */
-
-        Evaler.onBreakpoint = () => {
-            console.log(Evaler.stack);
-            return true;
-        };
         Evaler.clear();
         Evaler.global.define(0, "yes");
         Evaler.interpret(code);
