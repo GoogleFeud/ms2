@@ -20,7 +20,9 @@ export const enum OP_CODES {
     ASSIGN,
     FN_START,
     FN_END,
-    GOTO_FALSE,
+    JUMP_TRUE,
+    JUMP_FALSE,
+    JUMP,
     RTRN,
     ELSE,
     CALL,
@@ -97,7 +99,7 @@ export class Interpreter {
                 break;
             }
             case OP_CODES.PUSH_VAR: 
-                this.stack.push(env.get(code.readInt16BE(address)));
+                this.stack.push(env.get(code.readUInt16BE(address)));
                 address += 2;
                 break;
             case OP_CODES.ADD: {
@@ -144,16 +146,23 @@ export class Interpreter {
                 break;
             }
             case OP_CODES.LET: 
-                env.define(code.readInt16BE(address), this.stack[this.stack.length - 1]);
+                env.define(code.readUInt16BE(address), this.stack[this.stack.length - 1]);
                 address += 2;
                 break;
             case OP_CODES.ASSIGN:
-                env.set(code.readInt16BE(address), this.stack.pop());
+                env.set(code.readUInt16BE(address), this.stack.pop());
                 address += 2;
                 break;
-            case OP_CODES.GOTO_FALSE:
-                if (!this.stack.pop()) address += code.readInt16BE(address) + 2;
+            case OP_CODES.JUMP_FALSE:
+                if (!this.stack.pop()) address += code.readUInt16BE(address) + 2;
                 else address += 2;
+                break;
+            case OP_CODES.JUMP_TRUE:
+                if (this.stack.pop()) address += code.readUInt16BE(address) + 2;
+                else address += 2;
+                break;
+            case OP_CODES.JUMP:
+                address += code.readUInt16BE(address) + 2;
                 break;
             case OP_CODES.BREAKPOINT: {
                 this.pausedAt = address;

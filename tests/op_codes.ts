@@ -225,53 +225,57 @@ describe("Op Codes", () => {
         expect(Evaler.global.get(1)(" ")).members(["Thank", "you", "world!"]);
     });
 
-    it("IF (Else)", () => {
+    it("IF (Else) (JUMP_TRUE)", () => {
         const code = Buffer.from([
             OP_CODES.PUSH_UNDEFINED, OP_CODES.LET, 0x0, 0x1, // let a;
             OP_CODES.PUSH_VAR, 0x0, 0x0, // Push the variable "0" to the stack
-            OP_CODES.GOTO_FALSE, 0x0, 0x5, // If the last pushed value is falsey, jump 5 bytes ahead
-            OP_CODES.PUSH_8, 0x9,
-            OP_CODES.ASSIGN, 0x0, 0x1,
-            OP_CODES.PUSH_8, 0x5,
-            OP_CODES.ASSIGN, 0x0, 0x1,
+            OP_CODES.JUMP_TRUE, 0x0, 0x5, // If the last pushed value is true, jump 5 bytes ahead
+            OP_CODES.PUSH_8, 0x5, OP_CODES.ASSIGN, 0x0, 0x1, // If the variable "0" is false, set a to 5
+            OP_CODES.PUSH_8, 0x9, OP_CODES.ASSIGN, 0x0, 0x1, // If the variable "0" is true, set a to 9
             OP_CODES.END
         ]);
         Evaler.clear();
         Evaler.global.define(0, true);
         Evaler.interpret(code);
-        expect(Evaler.global.get(1)).to.be.equal(5);
+        expect(Evaler.global.get(1)).to.be.equal(9);
     });
 
-    /**  it("IF (Else If, Else)", () => {
+    it("IF (Else If, Else) (JUMP, JUMP_TRUE)", () => {
         const code = Buffer.from([
-            OP_CODES.PUSH_UNDEFINED, OP_CODES.LET, 0x0, 0x1, // let res = undefined;
-            OP_CODES.PUSH_STR, 0x0, 0x2, 0x6e, 0x6f, OP_CODES.PUSH_VAR, 0x0, 0x0, OP_CODES.EQUAL, OP_CODES.IF_BLOCK_START, 0x0, 0x6, // if (a === "no") {
-            OP_CODES.PUSH_8, 0x9, OP_CODES.ASSIGN, 0x0, 0x1, // res = 9;
-            OP_CODES.IF_BLOCK_END, // }
-            OP_CODES.PUSH_STR, 0x0, 0x3, 0x79, 0x65, 0x73, OP_CODES.PUSH_VAR, 0x0, 0x0, OP_CODES.EQUAL, // "yes" === a
-            OP_CODES.IF_BLOCK_START, 0x0, 0x6,
-            OP_CODES.PUSH_8, 0x5, OP_CODES.ASSIGN, 0x0, 0x1, // res = 5;
-            OP_CODES.IF_BLOCK_END,
-            OP_CODES.IF_BLOCK_START, 0x0, 0x6,
-            OP_CODES.PUSH_8, 0x3, OP_CODES.ASSIGN, 0x0, 0x1, // res = 3;
-            OP_CODES.IF_BLOCK_END,
+            /**0 */ OP_CODES.PUSH_VAR, 0x0, 0x0, // Push variable 0 to stack
+            /**1 */ OP_CODES.PUSH_STR, 0x0, 0x3, 0x79, 0x65, 0x73, // Push string "yes" to stack,
+            /**2 */ OP_CODES.EQUAL, // Check if the value in variable 0 is equal to "yes"
+            /**3 */ OP_CODES.JUMP_TRUE, 0x0, 0x16, // If they are equal, execute the code on line 10
+            /**4 */ OP_CODES.PUSH_VAR, 0x0, 0x0,
+            /**5 */ OP_CODES.PUSH_STR, 0x0, 0x2, 0x6e, 0x6f,
+            /**6 */ OP_CODES.EQUAL,
+            /* 7 */ OP_CODES.JUMP_TRUE, 0x0, 0x5,
+            /* 8 */ OP_CODES.PUSH_8, 0x3, // if var 0 not equal to "no" or "yes", push 3 to stack
+            /* 9 */ OP_CODES.JUMP, 0x0, 0x7,
+            /* 10 */ OP_CODES.PUSH_8, 0x2, // if var 0 === "no" push 2 to stack.
+            /* 11 */ OP_CODES.JUMP, 0x0, 0x2,
+            /**12 */ OP_CODES.PUSH_8, 0x1, // if var 0 === "yes" push 1 to stack.
+            OP_CODES.PUSH_8, 0x4,
             OP_CODES.END
         ]);
 
+        /**
          * Same as:
-         * if (a === "no") {
-         *    res = 9;
-         * } else if (a === "yes") {
-         *    res = 5;
-         * } else {
-         *    res = 3;
-         * }
+         * if (a === "yes") push 1;
+         * else if (a === "no") push 2;
+         * else push 3;
+         * push 4;
+         */
 
+        Evaler.onBreakpoint = () => {
+            console.log(Evaler.stack);
+            return true;
+        };
         Evaler.clear();
-        Evaler.global.define(0, "no");
+        Evaler.global.define(0, "yes");
         Evaler.interpret(code);
-        expect(Evaler.global.get(1)).to.be.equal(9);
-    }); */
+        expect(Evaler.stack).members([1, 4]);
+    }); 
 
 });
 

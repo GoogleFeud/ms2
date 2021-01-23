@@ -117,6 +117,8 @@ globals: {
 
 ### Variables
 
+**LET, PUSH_VAR, and ASSIGN statements only accept unsigned integers**
+
 ```let pi = 3.14;```
 
 ```
@@ -124,7 +126,7 @@ PUSH_32 40 48 f5 c3 // Push 3.14 to the stack
 LET 0x0 0x1 // Define variable 
 ```
 
-**The let op code doesn't pop the last element in the stack**
+**The LET statement doesn't pop the last element in the stack**
 
 Variable names are translated from strings to a unsigned 16-bit number. The variable value is pushed to the stack beforehand. That means that there are **65535** possible variables. Variable names are incremented, so the first declared variable will have the name `0`, then `1`, and so on.
 
@@ -240,7 +242,7 @@ LET 0x0 0x5
 ```
 PUSH_VAR 0x0 0x5
 PUSH_8 0x1 
-COMPARE // Pushes true or false
+EQUAL // Pushes true or false
 ```
 
 **It's the same with the others: >, >, >=, <=**
@@ -256,37 +258,49 @@ NOT // Pushes the result to the stack
 
 ### If
 
+**JUMP statements only accept unsigned integers**
+
 ```
 if (b == true) {
     print("Hello World");
 }
+print("You got that message, right?");
 ```
 
 ```
 PUSH_VAR 0x0 0x5
-IF_BLOCK 0x0 0xF // If the last pushed value is truthy, do the following, otherwise skip to the provided offset
-PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
-CALL .... // Call the imaginary print function
-END_IF
+JUMP_FALSE 0x0, 0x...
+PUSH_STR ...
+CALL ...
+PUSH_STR ...  // <-- JUMP_FALSE will jump to here if b == true returns false
+CALL ...
 ```
 
-**The IF OP pushes the OPPOSITE result of the condition, which makes chaining if statements way easier**
-
-### Ternery
+### If - else if - else
 
 ```
-(a == 3) ? print("Hello World"):print("No world!");
+if (a === "yes") {
+    return 1;
+}
+else if (a === "no") {
+    return 2;
+} else return 3;
 ```
 
 ```
-PUSH_VAR 0x0 0x5
-PUSH_8 0x3
-COMPARE
-IF 
-PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
-CALL ....
-ELSE
-PUSH_STR 0x0 0xB 48 65 6c 6c 6f 20 57 6f 72 6c 64
-CALL ....
+1. PUSH_VAR ...
+2. PUSH_STR ...
+3. EQUAL
+4. JUMP_TRUE 14
+5. PUSH_VAR ...
+6. PUSH_STR ...
+7. EQUAL
+8. JUMP_TRUE 11
+9. PUSH_8 0x3
+10. JUMP 15
+11. PUSH_8 0x2
+12. JUMP 15
+14. PUSH_8 0x1
+15. ...
 ```
 
