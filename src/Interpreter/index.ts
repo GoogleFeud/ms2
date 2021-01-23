@@ -126,8 +126,20 @@ export class Interpreter {
             case OP_CODES.EQUAL: 
                 this.stack.push(this.stack.pop() === this.stack.pop());
                 break;
-            case OP_CODES.AND:
-                this.stack.push(this.stack.pop() && this.stack.pop());
+            case OP_CODES.AND: {
+                const first = this.stack.pop();
+                const second = this.stack.pop();
+                this.stack.push(second && first);
+                break;
+            }
+            case OP_CODES.OR: {
+                const first = this.stack.pop();
+                const second = this.stack.pop();
+                this.stack.push(second || first);
+                break;
+            }
+            case OP_CODES.NOT:
+                this.stack.push(!this.stack.pop());
                 break;
             case OP_CODES.ACCESS: {
                 const item = this.stack.pop();

@@ -1,6 +1,6 @@
 
 import { Interpreter, OP_CODES } from "../src/Interpreter";
-import { expect } from "chai";
+import { expect, should } from "chai";
 
 const Evaler = new Interpreter();
 
@@ -132,6 +132,56 @@ describe("Op Codes", () => {
         ]);
         Evaler.clear().interpret(code);
         expect(Evaler.stack.pop()).to.be.equal(6);
+    });
+
+    it("AND", () => {
+        let code = Buffer.from([
+            OP_CODES.PUSH_UNDEFINED,
+            OP_CODES.PUSH_8, 0x9,
+            OP_CODES.AND,
+            OP_CODES.END
+        ]);
+        Evaler.clear().interpret(code);
+        expect(Evaler.stack.pop()).to.be.equal(undefined);
+
+        code = Buffer.from([
+            OP_CODES.PUSH_BOOL, 0x1,
+            OP_CODES.PUSH_8, 0x3,
+            OP_CODES.AND,
+            OP_CODES.END
+        ]);
+        Evaler.clear().interpret(code);
+        expect(Evaler.stack.pop()).to.be.equal(3);
+    });
+
+    it("OR", () => {
+        let code = Buffer.from([
+            OP_CODES.PUSH_UNDEFINED,
+            OP_CODES.PUSH_8, 0x9,
+            OP_CODES.OR,
+            OP_CODES.END
+        ]);
+        Evaler.clear().interpret(code);
+        expect(Evaler.stack.pop()).to.be.equal(9);
+
+        code = Buffer.from([
+            OP_CODES.PUSH_BOOL, 0x0,
+            OP_CODES.PUSH_8, 0x0,
+            OP_CODES.AND,
+            OP_CODES.END
+        ]);
+        Evaler.clear().interpret(code);
+        expect(Evaler.stack.pop()).to.be.equal(false);
+    });
+
+    it("NOT", () => {
+        const code = Buffer.from([
+            OP_CODES.PUSH_8, 0x0,
+            OP_CODES.NOT,
+            OP_CODES.END 
+        ]);
+        Evaler.clear().interpret(code);
+        expect(Evaler.stack.pop()).to.be.equal(true);
     });
 
     it("EQUAL", () => {
