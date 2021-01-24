@@ -124,6 +124,30 @@ export class Interpreter {
             case OP_CODES.EQUAL: 
                 this.stack.push(this.stack.pop() === this.stack.pop());
                 break;
+            case OP_CODES.LESS_THAN: {
+                const first = this.stack.pop();
+                const second = this.stack.pop();
+                this.stack.push(second < first);
+                break;
+            }
+            case OP_CODES.LESS_OR_EQUAL: {
+                const first = this.stack.pop();
+                const second = this.stack.pop();
+                this.stack.push(second <= first);
+                break;
+            }
+            case OP_CODES.GREATER_THAN: {
+                const first = this.stack.pop();
+                const second = this.stack.pop();
+                this.stack.push(second > first);
+                break;
+            }
+            case OP_CODES.GREATER_OR_EQUAL: {
+                const first = this.stack.pop();
+                const second = this.stack.pop();
+                this.stack.push(second >= first);
+                break;
+            }
             case OP_CODES.AND: {
                 const first = this.stack.pop();
                 const second = this.stack.pop();

@@ -83,8 +83,6 @@ PUSH_8 0x5
 PUSH_ARR 0x0 0x5
 ```
 
-Adds the array to the array literal pool and pushes a unique id to the stack that represents the raw array structure
-
 ### Object literals
 
 ```{a: 1, b: 2, c: 3}```
