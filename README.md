@@ -1,5 +1,6 @@
 
-A programming language. Translates source code to bytecode which can be easily executed without the source code. 
+# MS2
+**A programming language written in pure javascript, aiming to be as fast as javascript.**
 
 # Table of contents
 

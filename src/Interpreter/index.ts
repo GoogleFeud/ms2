@@ -41,11 +41,13 @@ export const enum OP_CODES {
 
 export class Interpreter {
     stack: Array<any>
+    exports: Record<string, any>
     global: Enviourment
     private pausedAt: number
     onBreakpoint?: () => boolean; 
     constructor() {
         this.stack = [];
+        this.exports = {};
         this.global = new Enviourment();
         this.pausedAt = 0;
     }
@@ -70,21 +72,17 @@ export class Interpreter {
                 address += 2;
                 break;
             case OP_CODES.PUSH_8:
-                this.stack.push(code.readInt8(address));
-                address++;
+                this.stack.push(code.readInt8(address++));
                 break;
             case OP_CODES.PUSH_BOOL:
-                this.stack.push(Boolean(code.readInt8(address)));
-                address++;
+                this.stack.push(Boolean(code.readInt8(address++)));
                 break;
             case OP_CODES.PUSH_UNDEFINED:
                 this.stack.push(undefined);
                 break;
             case OP_CODES.PUSH_STR: {
-                const size = code.readInt16BE(address);
-                address += 2;
-                this.stack.push(code.toString("utf-8", address, address + size));
-                address += size;
+                const size = code.readUInt16BE(address);
+                this.stack.push(code.toString("utf-8", address += 2, address += size));
                 break;
             }
             case OP_CODES.PUSH_ARR: {
@@ -143,18 +141,16 @@ export class Interpreter {
                 break;
             case OP_CODES.ACCESS: {
                 const item = this.stack.pop();
-                this.stack.push(item[code.readInt16BE(address)]);
+                this.stack.push(item[code.readUInt16BE(address)]);
                 address += 2;
                 break;
             }
             case OP_CODES.ACCESS_STR: {
                 const item = this.stack.pop();
-                const size = code.readInt16BE(address);
-                address += 2;
-                let res = item[code.toString("utf-8", address, address + size)];
+                const size = code.readUInt16BE(address);
+                let res = item[code.toString("utf-8", address += 2, address += size)];
                 if (typeof res === "function") res = res.bind(item);
                 this.stack.push(res);
-                address += size;
                 break;
             }
             case OP_CODES.LET: 
@@ -176,14 +172,18 @@ export class Interpreter {
             case OP_CODES.JUMP:
                 address += code.readUInt16BE(address) + 2;
                 break;
-            case OP_CODES.BREAKPOINT: {
+            case OP_CODES.EXPORT: {
+                const item = this.stack.pop();
+                const size = code.readUInt16BE(address);
+                this.exports[code.toString("utf-8", address += 2, address += size)] = item;
+                break;
+            }
+            case OP_CODES.BREAKPOINT: 
                 this.pausedAt = address;
                 if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(code, env, this.pausedAt, endByte);
                 return address;
-            }
-            case endByte: {
+            case endByte: 
                 return address;
-            }
             default:
                 throw `Unknown OP code at byte ${address}`;
             }
