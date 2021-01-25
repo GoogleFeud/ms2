@@ -166,11 +166,51 @@ Compiler.eval(bytecode, {
 
 ### Property access
 
+#### Objects created from MS
+
+**Objects created in MS2 will have indexes as properties.**
+
 ```a->b;```
 
 ```
 PUSH_VAL 0x0 0x1 // Push value of variable name to the stack
 ACCESS 0x 0x1 // Get the property b and push it to the stack
+```
+
+#### Native objects (arrays, strings, maps, etc.)
+
+Most native object properties are mapped to an index, which means the interpreter is going to access them faster, and they are going to use less space.
+
+```a->length;```
+
+```
+PUSH_VAL 0x0 0x1 // Push a to stack
+ACCESS_ALIAS 0x0 0x0 // "length"'s index is 0
+```
+
+#### Custom objects
+
+There are two ways to access properties of custom objects:
+
+**ACCESS_STR**
+
+"smth" gets converted to hex
+
+```
+a->smth;
+```
+
+```
+PUSH_VAL 0x0 0x1 // Push a to stack
+ACCESS_STR 0x0 0x4 ...
+```
+
+**CUSTOM MAPPINGS**
+
+You can also add custom mappings, so that custom properties get shortened.
+
+```
+addPropertyAlias("smth");
 ```
 
 ### Functions
@@ -190,7 +230,7 @@ PUSH_8 0x1
 LET 0x0 0x0
 PUSH_8 0x2
 LET 0x0 0x1
-FN_START 0x2 // Starts the functions, defines two args
+FN_START 0x0 0xC // Starts the function, specifies the length of the function
 PUSH_ARG 0x0
 PUSH_ARG 0x1
 ADD // a + b
@@ -209,9 +249,10 @@ myFn(5, 10);
 ```
 
 ```
+PUSH_VAR 0x0 0x3
 PUSH_8 0x5
 PUSH_8 0xA
-CALL 0x0 0x3 // Executes the bytecode 
+CALL 0x2 // Executes the function with 2 arguments
 ```
 
 ### Exporting

@@ -1,5 +1,9 @@
 
-export const PropertyAlias = {
+interface IPropertyAlias {
+    [key: number]: string
+}
+
+export const PropertyAlias: IPropertyAlias = {
     0: "length",
     1: "push",
     2: "pop",
