@@ -175,6 +175,8 @@ ACCESS 0x 0x1 // Get the property b and push it to the stack
 
 ### Functions
 
+**Max amount of function args is 255!**
+
 ```
 let something = 1;
 let something2 = 2;
@@ -188,11 +190,14 @@ PUSH_8 0x1
 LET 0x0 0x0
 PUSH_8 0x2
 LET 0x0 0x1
-FN_START // Creates a new enviourment, which contains a and b at addresses 0x3 and 0x4
-ADD // adds the last two pushed values
-ADD_VAR 0x0 0x0 // adds the "something" variable with the last pushed value
-ADD_8 0x1 // adds the last pushed variable with 1
-RTRN // Returns the last pushed value 
+FN_START 0x2 // Starts the functions, defines two args
+PUSH_ARG 0x0
+PUSH_ARG 0x1
+ADD // a + b
+PUSH_VAR 0x0 0x0
+ADD // a + b + something
+PUSH_8 0x1
+ADD // a + b + something + 1
 FN_END // Ends the function
 LET 0x0 0x3 // Assigns the third element to the function
 ```

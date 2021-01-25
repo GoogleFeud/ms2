@@ -398,10 +398,21 @@ describe("Op Codes", () => {
                 0x73, 0x70, 0x6c, 0x69, 0x74,
                 OP_CODES.LET, 0x0, 0x1,
                 OP_CODES.END
-            ]); // Same as: let a = b.length;
+            ]); // Same as: let a = "Thank you world!".split.bind("Thank you world!");
             Evaler.clear();
             Evaler.global.define(0, "Thank you world!");
             Evaler.interpret(code);
+            expect(Evaler.global.get(1)(" ")).members(["Thank", "you", "world!"]);
+        });
+
+        it("ACCESS_ALIAS (Function)", () => {
+            Evaler.clear().global.define(0, "Thank you world!");
+            Evaler.interpret(Buffer.from([
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.ACCESS_ALIAS, 0x23, 
+                OP_CODES.LET, 0x0, 0x1,
+                OP_CODES.END
+            ]));
             expect(Evaler.global.get(1)(" ")).members(["Thank", "you", "world!"]);
         });
 
@@ -464,6 +475,83 @@ describe("Op Codes", () => {
         ]);
         Evaler.clear().interpret(code);
         expect(Evaler.exports.someNum).to.be.equal(5);
+    });
+
+    describe("FUNCTION", () => {
+
+        it("Simple Function", () => {
+            Evaler.clear().interpret(Buffer.from([
+                OP_CODES.FN_START, 0x0, 0x2,
+                OP_CODES.PUSH_8, 0x5,
+                OP_CODES.FN_END,
+                OP_CODES.END
+            ]));
+            const fn = Evaler.stack.pop();
+            fn.call();
+            expect(Evaler.stack.pop()).is.equal(5);
+        });
+
+        it("Variables", () => {
+            Evaler.clear().interpret(Buffer.from([
+                OP_CODES.LET, 0x0, 0x0,
+                OP_CODES.FN_START, 0x0, 0x5,
+                OP_CODES.PUSH_8, 0x5,
+                OP_CODES.ASSIGN, 0x0, 0x0,
+                OP_CODES.FN_END,
+                OP_CODES.END
+            ]));
+            const fn = Evaler.stack.pop();
+            fn.call();
+            expect(Evaler.global.get(0)).is.equal(5);
+        });
+
+    });
+
+    describe("CALL", () => {
+
+        it("Simple Call", () => {
+            Evaler.clear().interpret(Buffer.from([
+                OP_CODES.LET, 0x0, 0x0,
+                OP_CODES.FN_START, 0x0, 0x6,
+                OP_CODES.PUSH_8, 0x5,
+                OP_CODES.ASSIGN, 0x0, 0x0,
+                OP_CODES.RETURN,
+                OP_CODES.FN_END,
+                OP_CODES.CALL, 0x0, 
+                OP_CODES.END
+            ]));
+            expect(Evaler.stack.pop()).is.equal(5);
+        });
+
+        it("Native function call", () => {
+            Evaler.clear();
+            let res;
+            Evaler.global.define(0, (a: any) => res = a);
+            Evaler.interpret(Buffer.from([
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.PUSH_8, 0x2,
+                OP_CODES.CALL, 0x1, 
+                OP_CODES.END
+            ]));
+
+            expect(res).is.equal(2);
+        });
+
+        it("Array.push", () => {
+            Evaler.clear().interpret(Buffer.from([
+                OP_CODES.PUSH_8, 0x2,
+                OP_CODES.PUSH_8, 0x5,
+                OP_CODES.PUSH_8, 0x6,
+                OP_CODES.PUSH_8, 0x8,
+                OP_CODES.PUSH_ARR, 0x0, 0x4,
+                OP_CODES.LET, 0x0, 0x0,
+                OP_CODES.ACCESS_STR, 0x0, 0x4, 0x70, 0x75, 0x73, 0x68,
+                OP_CODES.PUSH_8, 0x9,
+                OP_CODES.CALL, 0x1, 
+                OP_CODES.END
+            ]));
+            expect(Evaler.global.get(0)).members([2, 5, 6, 8, 9]);
+        });
     });
 
 });

@@ -1,5 +1,7 @@
 
 import { Enviourment } from "./Enviourment";
+import { MSFunction } from "./structs/MSFunction";
+import { PropertyAlias } from "../util/default_property_alias";
 
 export const enum OP_CODES {
     PUSH_32,
@@ -10,12 +12,14 @@ export const enum OP_CODES {
     PUSH_STR,
     PUSH_ARR,
     PUSH_VAR,
+    PUSH_ARG,
     ADD,
     DIV,
     MUL,
     SUB,
     ACCESS,
     ACCESS_STR,
+    ACCESS_ALIAS,
     LET,
     ASSIGN,
     FN_START,
@@ -23,7 +27,7 @@ export const enum OP_CODES {
     JUMP_TRUE,
     JUMP_FALSE,
     JUMP,
-    RTRN,
+    RETURN,
     ELSE,
     CALL,
     EXPORT,
@@ -43,6 +47,8 @@ export class Interpreter {
     stack: Array<any>
     exports: Record<string, any>
     global: Enviourment
+    code?: Buffer
+    returnValue: any
     private pausedAt: number
     onBreakpoint?: () => boolean; 
     constructor() {
@@ -59,7 +65,8 @@ export class Interpreter {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END) : number {
+    interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END, args?: Array<any>) : number {
+        this.code = code;
         let address = offset;
         for(;;) {
             switch(code[address++]) {
@@ -99,6 +106,9 @@ export class Interpreter {
             case OP_CODES.PUSH_VAR: 
                 this.stack.push(env.get(code.readUInt16BE(address)));
                 address += 2;
+                break;
+            case OP_CODES.PUSH_ARG:
+                this.stack.push(args?.[code.readUInt8(address++)]);
                 break;
             case OP_CODES.ADD: {
                 const first = this.stack.pop();
@@ -177,14 +187,42 @@ export class Interpreter {
                 this.stack.push(res);
                 break;
             }
+            case OP_CODES.ACCESS_ALIAS: {
+                const item = this.stack.pop();
+                let res = item[PropertyAlias[code.readUInt8(address++) as 0]];
+                if (typeof res === "function") res = res.bind(item);
+                this.stack.push(res);
+                break;
+            }
             case OP_CODES.LET: 
                 env.define(code.readUInt16BE(address), this.stack[this.stack.length - 1]);
                 address += 2;
                 break;
             case OP_CODES.ASSIGN:
-                env.set(code.readUInt16BE(address), this.stack.pop());
+                env.set(code.readUInt16BE(address), this.stack[this.stack.length - 1]);
                 address += 2;
                 break;
+            case OP_CODES.FN_START: {
+                const size = code.readUInt16BE(address);
+                address += 2;
+                this.stack.push(new MSFunction(address, this));
+                address += size + 1; // Account for the FN_END code
+                break;
+            }
+            case OP_CODES.RETURN:
+                this.returnValue = this.stack.pop();
+                break;
+            case OP_CODES.CALL: {
+                const argCount = code.readUInt8(address++) + 1; // Account for the function object itself
+                const args = [];
+                for (let i=0; i < argCount; i++) {
+                    args[i] = this.stack.pop();
+                }
+                const func = args.pop();
+                this.returnValue = func.call(undefined, ...args);
+                this.stack.push(this.returnValue);
+                break;
+            }
             case OP_CODES.JUMP_FALSE:
                 if (!this.stack.pop()) address += code.readUInt16BE(address) + 2;
                 else address += 2;
