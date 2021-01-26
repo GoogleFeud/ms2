@@ -1,6 +1,6 @@
 
 # MS2
-**A programming language written in pure javascript, aiming to be as fast as javascript.**
+**A programming language written in javascript, aiming to be as fast as javascript.**
 
 # Table of contents
 

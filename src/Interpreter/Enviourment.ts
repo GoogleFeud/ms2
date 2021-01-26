@@ -30,5 +30,15 @@ export class Enviourment {
         this.entries[key] = value;
     }
 
+    inc(key: number) : number {
+        if (!(key in this.entries)) throw `${key} is not defined!`;
+        return ++this.entries[key];
+    }
+
+    dec(key: number) : number {
+        if (!(key in this.entries)) throw `${key} is not defined!`;
+        return --this.entries[key];
+    }
+
     
 }

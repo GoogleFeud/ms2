@@ -552,6 +552,75 @@ describe("Op Codes", () => {
             ]));
             expect(Evaler.global.get(0)).members([2, 5, 6, 8, 9]);
         });
+
+        it("Native-native function calling custom function", () => {
+            Evaler.clear().interpret(Buffer.from([
+                OP_CODES.FN_START, 0x0, 0x6,
+                OP_CODES.PUSH_ARG, 0x0,
+                OP_CODES.PUSH_ARG, 0x1,
+                OP_CODES.SUB,
+                OP_CODES.RETURN,
+                OP_CODES.FN_END,
+                OP_CODES.LET, 0x0, 0x0,
+                OP_CODES.END
+            ]));
+            const sortfn = Evaler.global.get(0);
+            const arr = [5, 4, 3, 1, 2].sort((a, b) => sortfn.call(a, b));
+            expect(arr).members([1, 2, 3, 4, 5]);
+        });
+    });
+
+    it("INC", () => {
+        Evaler.clear().interpret(Buffer.from([
+            OP_CODES.PUSH_8, 0x1,
+            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.INC, 0x0, 0x0,
+            OP_CODES.INC, 0x0, 0x0,
+            OP_CODES.INC, 0x0, 0x0,
+            OP_CODES.END
+        ]));
+        expect(Evaler.global.get(0)).to.be.equal(4);
+    });
+
+    it("DEC", () => {
+        Evaler.clear().interpret(Buffer.from([
+            OP_CODES.PUSH_8, 0x1,
+            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.DEC, 0x0, 0x0,
+            OP_CODES.DEC, 0x0, 0x0,
+            OP_CODES.DEC, 0x0, 0x0,
+            OP_CODES.END
+        ]));
+        expect(Evaler.global.get(0)).to.be.equal(-2);
+    });
+
+    describe("LOOP", () => {
+
+        it("for (let i=0; i < 10; i++)", () => {
+            Evaler.clear();
+            Evaler.interpret(Buffer.from([
+                OP_CODES.PUSH_ARR, 0x0, 0x0, OP_CODES.LET, 0x0, 0x1, // let arr = [];
+                OP_CODES.PUSH_8, 0x0, OP_CODES.LET, 0x0, 0x0, // let i = 0;
+                OP_CODES.PUSH_8, 0xA, // 10
+                OP_CODES.LESS_THAN, // i < 10
+                OP_CODES.JUMP_FALSE, 0x0, 0x10,
+                OP_CODES.PUSH_VAR, 0x0, 0x1,
+                OP_CODES.ACCESS_ALIAS, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.CALL, 0x1,
+                OP_CODES.INC, 0x0, 0x0,
+                OP_CODES.GOTO, 0x0, 0xB,
+                OP_CODES.END
+            ]));
+
+            /** Same as:
+             * const arr = [];
+             * for (let i=0; i < 10; i++) {
+             *   arr.push(i);
+             * }
+             */
+            expect(Evaler.global.get(1)).members([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        });
     });
 
 });

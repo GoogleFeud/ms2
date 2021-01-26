@@ -17,6 +17,8 @@ export const enum OP_CODES {
     DIV,
     MUL,
     SUB,
+    INC,
+    DEC,
     ACCESS,
     ACCESS_STR,
     ACCESS_ALIAS,
@@ -27,6 +29,7 @@ export const enum OP_CODES {
     JUMP_TRUE,
     JUMP_FALSE,
     JUMP,
+    GOTO,
     RETURN,
     ELSE,
     CALL,
@@ -131,6 +134,14 @@ export class Interpreter {
             case OP_CODES.MUL:
                 this.stack.push(this.stack.pop() * this.stack.pop());
                 break;
+            case OP_CODES.INC:
+                this.stack.push(env.inc(code.readUInt16BE(address)));
+                address += 2;
+                break;
+            case OP_CODES.DEC:
+                this.stack.push(env.dec(code.readUInt16BE(address)));
+                address += 2;
+                break;
             case OP_CODES.EQUAL: 
                 this.stack.push(this.stack.pop() === this.stack.pop());
                 break;
@@ -215,24 +226,23 @@ export class Interpreter {
             case OP_CODES.CALL: {
                 const argCount = code.readUInt8(address++) + 1; // Account for the function object itself
                 const args = [];
-                for (let i=0; i < argCount; i++) {
-                    args[i] = this.stack.pop();
-                }
-                const func = args.pop();
-                this.returnValue = func.call(undefined, ...args);
-                this.stack.push(this.returnValue);
+                for (let i=0; i < argCount; i++) args[i] = this.stack.pop();
+                this.stack.push(this.returnValue = args.pop().call(undefined, ...args));
                 break;
             }
             case OP_CODES.JUMP_FALSE:
-                if (!this.stack.pop()) address += code.readUInt16BE(address) + 2;
-                else address += 2;
+                if (!this.stack.pop()) address += code.readUInt16BE(address);
+                address += 2;
                 break;
             case OP_CODES.JUMP_TRUE:
-                if (this.stack.pop()) address += code.readUInt16BE(address) + 2;
-                else address += 2;
+                if (this.stack.pop()) address += code.readUInt16BE(address);
+                address += 2;
                 break;
             case OP_CODES.JUMP:
                 address += code.readUInt16BE(address) + 2;
+                break;
+            case OP_CODES.GOTO:
+                address = code.readUInt16BE(address);
                 break;
             case OP_CODES.EXPORT: {
                 const item = this.stack.pop();
