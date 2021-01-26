@@ -28,6 +28,10 @@ export const enum OP_CODES {
     LET_POP,
     ASSIGN,
     ASSIGN_POP,
+    ASSIGN_PROP,
+    ASSIGN_PROP_POP,
+    ASSIGN_PROP_ALIAS,
+    ASSIGN_PROP_ALIAS_POP,
     FN_START,
     FN_START_INNER,
     FN_END,
@@ -245,6 +249,34 @@ export class Interpreter {
                 env.set(code.readUInt16BE(address), this.stack.pop());
                 address += 2;
                 break;
+            case OP_CODES.ASSIGN_PROP: {
+                const value = this.stack.pop();
+                const propToModify = this.stack.pop();
+                const propParent = this.stack.pop();
+                this.stack.push(propParent[propToModify] = value);
+                break;
+            }
+            case OP_CODES.ASSIGN_PROP_POP: {
+                const value = this.stack.pop();
+                const propToModify = this.stack.pop();
+                const propParent = this.stack.pop();
+                propParent[propToModify] = value;
+                break;
+            }
+            case OP_CODES.ASSIGN_PROP_ALIAS: {
+                const value = this.stack.pop();
+                const propToModify = PropertyAlias[this.stack.pop()];
+                const propParent = this.stack.pop();
+                this.stack.push(propParent[propToModify] = value);
+                break;
+            }
+            case OP_CODES.ASSIGN_PROP_ALIAS_POP: {
+                const value = this.stack.pop();
+                const propToModify = PropertyAlias[this.stack.pop()];
+                const propParent = this.stack.pop();
+                propParent[propToModify] = value;
+                break;
+            }
             case OP_CODES.FN_START: {
                 const size = code.readUInt16BE(address);
                 address += 2;
