@@ -18,14 +18,20 @@ export const enum OP_CODES {
     MUL,
     SUB,
     INC,
+    INC_POP,
     DEC,
+    DEC_POP,
     ACCESS,
     ACCESS_STR,
     ACCESS_ALIAS,
     LET,
+    LET_POP,
     ASSIGN,
+    ASSIGN_POP,
     FN_START,
+    FN_START_INNER,
     FN_END,
+    FN_END_INNER,
     JUMP_TRUE,
     JUMP_FALSE,
     JUMP,
@@ -33,6 +39,7 @@ export const enum OP_CODES {
     RETURN,
     ELSE,
     CALL,
+    CALL_POP,
     EXPORT,
     OR,
     AND,
@@ -68,7 +75,16 @@ export class Interpreter {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END, args?: Array<any>) : number {
+    /**
+     * 
+     * @param code - The buffer from the compiler
+     * @param env - The current enviourment. Default is global
+     * @param offset - Where to start interpreting the code
+     * @param endByte - Where to stop interpreting the code
+     * @param args - Args for the PUSH_ARG op code
+     * @param endByteArg - An extra byte 
+     */
+    interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END, args?: Array<any>, endByteArg?: number) : number {
         this.code = code;
         let address = offset;
         for(;;) {
@@ -142,6 +158,14 @@ export class Interpreter {
                 this.stack.push(env.dec(code.readUInt16BE(address)));
                 address += 2;
                 break;
+            case OP_CODES.INC_POP:
+                env.inc(code.readUInt16BE(address));
+                address += 2;
+                break;
+            case OP_CODES.DEC_POP:
+                env.dec(code.readUInt16BE(address));
+                address += 2;
+                break;
             case OP_CODES.EQUAL: 
                 this.stack.push(this.stack.pop() === this.stack.pop());
                 break;
@@ -209,8 +233,16 @@ export class Interpreter {
                 env.define(code.readUInt16BE(address), this.stack[this.stack.length - 1]);
                 address += 2;
                 break;
+            case OP_CODES.LET_POP:
+                env.define(code.readUInt16BE(address), this.stack.pop());
+                address += 2;
+                break;
             case OP_CODES.ASSIGN:
                 env.set(code.readUInt16BE(address), this.stack[this.stack.length - 1]);
+                address += 2;
+                break;
+            case OP_CODES.ASSIGN_POP:
+                env.set(code.readUInt16BE(address), this.stack.pop());
                 address += 2;
                 break;
             case OP_CODES.FN_START: {
@@ -218,6 +250,13 @@ export class Interpreter {
                 address += 2;
                 this.stack.push(new MSFunction(address, this));
                 address += size + 1; // Account for the FN_END code
+                break;
+            }
+            case OP_CODES.FN_START_INNER: {
+                const size = code.readUInt16BE(address);
+                const id = code.readUInt8(address += 2);
+                this.stack.push(new MSFunction(++address, this, id));
+                address += size + 2; // Account for the FN_END_INNER
                 break;
             }
             case OP_CODES.RETURN:
@@ -228,6 +267,13 @@ export class Interpreter {
                 const args = [];
                 for (let i=0; i < argCount; i++) args[i] = this.stack.pop();
                 this.stack.push(this.returnValue = args.pop().call(undefined, ...args));
+                break;
+            }
+            case OP_CODES.CALL_POP: {
+                const argCount = code.readUInt8(address++) + 1; // Account for the function object itself
+                const args = [];
+                for (let i=0; i < argCount; i++) args[i] = this.stack.pop();
+                this.returnValue = args.pop().call(undefined, ...args);
                 break;
             }
             case OP_CODES.JUMP_FALSE:
@@ -254,7 +300,11 @@ export class Interpreter {
                 this.pausedAt = address;
                 if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(code, env, this.pausedAt, endByte);
                 return address;
-            case endByte: 
+            case endByte:
+                if (endByteArg) {
+                    if (code.readUInt8(address) === endByteArg) return address + 1;
+                    break;
+                }
                 return address;
             default:
                 throw `Unknown OP code at byte ${address}`;

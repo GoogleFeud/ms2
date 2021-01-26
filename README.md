@@ -242,6 +242,25 @@ FN_END // Ends the function
 LET 0x0 0x3 // Assigns the third element to the function
 ```
 
+#### Inner functions
+
+Let's assume that the following function is inside a function which is defined globally:
+
+```
+let fn2 = (a, b) => {
+    return a / b;
+}
+```
+
+```
+FN_START_INNER 0x0 0x6 0x0 // The first two bytes are the length of the function, the third is the ID of the inner function. 
+PUSH_ARG 0x0
+PUSH_ARG 0x1
+DIV
+RETURN
+FN_END_INNER 0x0
+```
+
 ### Calling
 
 ```
@@ -374,9 +393,9 @@ let arr = [];
 for (let i=0; i < 10; i++) {
 arr.push(i);
 };
- ```
+```
 
- ```
+```
 PUSH_ARR 0x0 0x0
 LET 0x0 0x1 // let arr = [];
 PUSH_8 0x0
@@ -387,7 +406,7 @@ JUMP_FALSE 0x0 0x10 // If i < 10 equals false, skip the entire loop sequence
 PUSH_VAR 0x0 0x1 // Get the array []
 ACCESS_ALIAS 0x1 // Get the push function
 PUSH_VAR 0x0 0x0, // Get i
-CALL 0x1 // Call push with argument i 
+CALL_POP 0x1 // Call push with argument i, the "POP" means that the result of the function won't be pushed to the stack
 INC 0x0 0x0 // i++
 OP_CODES.GOTO 0x0 0xB // Go back to the beginning of the loop 
  ```
