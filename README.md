@@ -367,3 +367,27 @@ else if (a === "no") {
 15. ...
 ```
 
+### Loops
+
+```
+let arr = [];
+for (let i=0; i < 10; i++) {
+arr.push(i);
+};
+ ```
+
+ ```
+PUSH_ARR 0x0 0x0
+LET 0x0 0x1 // let arr = [];
+PUSH_8 0x0
+LET 0x0 0x0 // let i = 0;
+PUSH_8 0xA // 10
+LESS_THAN, // i < 10
+JUMP_FALSE 0x0 0x10 // If i < 10 equals false, skip the entire loop sequence
+PUSH_VAR 0x0 0x1 // Get the array []
+ACCESS_ALIAS 0x1 // Get the push function
+PUSH_VAR 0x0 0x0, // Get i
+CALL 0x1 // Call push with argument i 
+INC 0x0 0x0 // i++
+OP_CODES.GOTO 0x0 0xB // Go back to the beginning of the loop 
+ ```
