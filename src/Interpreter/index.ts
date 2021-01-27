@@ -116,14 +116,9 @@ export class Interpreter {
                 break;
             }
             case OP_CODES.PUSH_ARR: {
-                const size = code.readInt16BE(address);
+                const stackLen = this.stack.length;
+                this.stack.push(this.stack.splice(stackLen - code.readInt16BE(address), stackLen));
                 address += 2;
-                const arr = [];
-                for (let i=0; i < size; i++) {
-                    arr.push(this.stack.pop());
-                }
-                arr.reverse();
-                this.stack.push(arr);
                 break;
             }
             case OP_CODES.PUSH_VAR: 
@@ -295,17 +290,15 @@ export class Interpreter {
                 this.returnValue = this.stack.pop();
                 break;
             case OP_CODES.CALL: {
-                const argCount = code.readUInt8(address++) + 1; // Account for the function object itself
-                const args = [];
-                for (let i=0; i < argCount; i++) args[i] = this.stack.pop();
-                this.stack.push(this.returnValue = args.pop().call(undefined, ...args));
+                const stackLen = this.stack.length;
+                const args = this.stack.splice(stackLen - code.readUInt8(address++), stackLen);
+                this.stack.push(this.returnValue = this.stack.pop().call(undefined, ...args)); 
                 break;
             }
             case OP_CODES.CALL_POP: {
-                const argCount = code.readUInt8(address++) + 1; // Account for the function object itself
-                const args = [];
-                for (let i=0; i < argCount; i++) args[i] = this.stack.pop();
-                this.returnValue = args.pop().call(undefined, ...args);
+                const stackLen = this.stack.length;
+                const args = this.stack.splice(stackLen - code.readUInt8(address++), stackLen);
+                this.returnValue = this.stack.pop().call(undefined, ...args); 
                 break;
             }
             case OP_CODES.JUMP_FALSE:

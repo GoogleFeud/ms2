@@ -20,6 +20,35 @@ describe("CALL", () => {
         expect(Evaler.stack.pop()).is.equal(5);
     });
 
+    it("Argument order", () => {
+        Evaler.clear().interpret(Buffer.from([
+            OP_CODES.FN_START, 0x0, 0x6,
+            OP_CODES.PUSH_ARG, 0x0,
+            OP_CODES.PUSH_ARG, 0x1,
+            OP_CODES.SUB,
+            OP_CODES.RETURN,
+            OP_CODES.FN_END,
+            OP_CODES.END
+        ]));
+        expect(Evaler.stack.pop().call(undefined, 7, 3)).to.be.equal(4);
+    });
+
+    
+    it("Argument order 2", () => {
+        Evaler.clear();
+        Evaler.global.define(0, (a: number, b: number) => {
+            return a - b;
+        });
+        Evaler.interpret(Buffer.from([
+            OP_CODES.PUSH_VAR, 0x0, 0x0,
+            OP_CODES.PUSH_8, 0xA,
+            OP_CODES.PUSH_8, 0x5,
+            OP_CODES.CALL, 0x2,
+            OP_CODES.END
+        ]));
+        expect(Evaler.stack.pop()).to.be.equal(5);
+    });
+
     it("Native function call", () => {
         Evaler.clear();
         let res;
