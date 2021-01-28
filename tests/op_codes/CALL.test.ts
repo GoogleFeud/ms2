@@ -8,7 +8,7 @@ describe("CALL", () => {
 
     it("Simple Call", () => {
         Evaler.clear().interpret(Buffer.from([
-            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.LET,
             OP_CODES.FN_START, 0x0, 0x6,
             OP_CODES.PUSH_8, 0x5,
             OP_CODES.ASSIGN, 0x0, 0x0,
@@ -36,7 +36,7 @@ describe("CALL", () => {
     
     it("Argument order 2", () => {
         Evaler.clear();
-        Evaler.global.define(0, (a: number, b: number) => {
+        Evaler.global.define((a: number, b: number) => {
             return a - b;
         });
         Evaler.interpret(Buffer.from([
@@ -52,7 +52,7 @@ describe("CALL", () => {
     it("Native function call", () => {
         Evaler.clear();
         let res;
-        Evaler.global.define(0, (a: any) => res = a);
+        Evaler.global.define((a: any) => res = a);
         Evaler.interpret(Buffer.from([
             OP_CODES.PUSH_VAR, 0x0, 0x0,
             OP_CODES.PUSH_8, 0x2,
@@ -70,7 +70,7 @@ describe("CALL", () => {
             OP_CODES.PUSH_8, 0x6,
             OP_CODES.PUSH_8, 0x8,
             OP_CODES.PUSH_ARR, 0x0, 0x4,
-            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.LET,
             OP_CODES.ACCESS_STR, 0x0, 0x4, 0x70, 0x75, 0x73, 0x68,
             OP_CODES.PUSH_8, 0x9,
             OP_CODES.CALL, 0x1, 
@@ -87,7 +87,7 @@ describe("CALL", () => {
             OP_CODES.SUB,
             OP_CODES.RETURN,
             OP_CODES.FN_END,
-            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.LET,
             OP_CODES.END
         ]));
         const sortfn = Evaler.global.get(0);

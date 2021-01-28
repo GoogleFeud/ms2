@@ -34,7 +34,7 @@ describe("PROPERTIES", () => {
     it("Access property of imported object", () => {
         Evaler.clear();
         const [indexOfA] = addPropertyAlias("a");
-        Evaler.global.define(0, {a: 15});
+        Evaler.global.define({a: 15});
         Evaler.interpret(Buffer.from([
             OP_CODES.PUSH_VAR, 0x0, 0x0,
             OP_CODES.ACCESS_ALIAS, indexOfA,
@@ -46,7 +46,7 @@ describe("PROPERTIES", () => {
     it("Access property of nested objects", () => {
         Evaler.clear();
         const [indexOfA, indexOfSomething] = addPropertyAlias("a", "something");
-        Evaler.global.define(0, {a: {something: 3.14}});
+        Evaler.global.define({a: {something: 3.14}});
         Evaler.interpret(Buffer.from([
             OP_CODES.PUSH_VAR, 0x0, 0x0,
             OP_CODES.ACCESS_ALIAS, indexOfA,
@@ -62,7 +62,7 @@ describe("PROPERTIES", () => {
             OP_CODES.PUSH_8, 0x1,
             OP_CODES.PUSH_8, 0x2,
             OP_CODES.PUSH_ARR, 0x0, 0x3,
-            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.LET,
             OP_CODES.PUSH_8, 0x0,
             OP_CODES.PUSH_8, 0xA,
             OP_CODES.ASSIGN_PROP,
@@ -74,7 +74,7 @@ describe("PROPERTIES", () => {
     it("Set property in imported object", () => {
         Evaler.clear();
         const [indexOfName, indexOfFunc] = addPropertyAlias("name", "something");
-        Evaler.global.define(0, {
+        Evaler.global.define({
             name: {
                 something: () => "Volen"
             }

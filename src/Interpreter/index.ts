@@ -74,6 +74,7 @@ export class Interpreter {
 
     clear() : this {
         this.global.entries = {};
+        this.global.lastEntryId = -1;
         this.stack.length = 0;
         return this;
     }
@@ -229,12 +230,10 @@ export class Interpreter {
                 break;
             }
             case OP_CODES.LET: 
-                env.define(code.readUInt16BE(address), this.stack[this.stack.length - 1]);
-                address += 2;
+                env.define(this.stack[this.stack.length - 1]);
                 break;
             case OP_CODES.LET_POP:
-                env.define(code.readUInt16BE(address), this.stack.pop());
-                address += 2;
+                env.define(this.stack.pop());
                 break;
             case OP_CODES.ASSIGN:
                 env.set(code.readUInt16BE(address), this.stack[this.stack.length - 1]);

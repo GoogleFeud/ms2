@@ -8,7 +8,7 @@ const Evaler = new Interpreter();
 describe("IF", () => {
     it("if...else", () => {
         const code = Buffer.from([
-            OP_CODES.PUSH_UNDEFINED, OP_CODES.LET, 0x0, 0x1, // let a;
+            OP_CODES.PUSH_UNDEFINED, OP_CODES.LET, // let a;
             OP_CODES.PUSH_VAR, 0x0, 0x0, // Push the variable "0" to the stack
             OP_CODES.JUMP_TRUE, 0x0, 0x5, // If the last pushed value is true, jump 5 bytes ahead
             OP_CODES.PUSH_8, 0x5, OP_CODES.ASSIGN, 0x0, 0x1, // If the variable "0" is false, set a to 5
@@ -16,7 +16,7 @@ describe("IF", () => {
             OP_CODES.END
         ]);
         Evaler.clear();
-        Evaler.global.define(0, true);
+        Evaler.global.define(true);
         Evaler.interpret(code);
         expect(Evaler.global.get(1)).to.be.equal(9);
     });
@@ -47,7 +47,7 @@ describe("IF", () => {
              * push 4;
              */
         Evaler.clear();
-        Evaler.global.define(0, "yes");
+        Evaler.global.define("yes");
         Evaler.interpret(code);
         expect(Evaler.stack).members([1, 4]);
     }); 

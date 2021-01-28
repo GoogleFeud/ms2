@@ -21,7 +21,7 @@ describe("FUNCTION", () => {
 
     it("Variables", () => {
         Evaler.clear().interpret(Buffer.from([
-            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.LET,
             OP_CODES.FN_START, 0x0, 0x5,
             OP_CODES.PUSH_8, 0x5,
             OP_CODES.ASSIGN, 0x0, 0x0,
@@ -87,7 +87,7 @@ describe("FUNCTION", () => {
     
         it("Function which calls a function that accepts a function", () => {
             Evaler.clear();
-            Evaler.global.define(0, (fn: MSFunction) => {
+            Evaler.global.define((fn: MSFunction) => {
                 expect(fn.call(undefined, 10, 25)).to.be.equal(10);
             });
             Evaler.interpret(Buffer.from([

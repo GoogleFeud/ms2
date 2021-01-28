@@ -68,7 +68,7 @@ describe("ARITHMETIC", () => {
     it("INC", () => {
         Evaler.clear().interpret(Buffer.from([
             OP_CODES.PUSH_8, 0x1,
-            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.LET,
             OP_CODES.INC, 0x0, 0x0,
             OP_CODES.INC, 0x0, 0x0,
             OP_CODES.INC, 0x0, 0x0,
@@ -80,7 +80,7 @@ describe("ARITHMETIC", () => {
     it("DEC", () => {
         Evaler.clear().interpret(Buffer.from([
             OP_CODES.PUSH_8, 0x1,
-            OP_CODES.LET, 0x0, 0x0,
+            OP_CODES.LET,
             OP_CODES.DEC, 0x0, 0x0,
             OP_CODES.DEC, 0x0, 0x0,
             OP_CODES.DEC, 0x0, 0x0,

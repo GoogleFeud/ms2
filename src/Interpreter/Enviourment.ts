@@ -2,8 +2,10 @@
 
 export class Enviourment {
     entries: Record<number, any>
-    constructor(entries?: Record<number, any>) {
+    lastEntryId: number
+    constructor(entries?: Record<number, any>, lastEntryId?: number) {
         this.entries = entries || {};
+        this.lastEntryId = lastEntryId ?? -1;
     }
 
     get(key: number) : any {
@@ -11,12 +13,11 @@ export class Enviourment {
     }
 
     has(key: number) : boolean {
-        if (key in this.entries) return true;
-        return false;
+        return key > this.lastEntryId;
     }
 
-    define(key: number, value: any) : void {
-        this.entries[key] = value;
+    define(value: any) : void {
+        this.entries[++this.lastEntryId] = value;
     }
 
     set(key: number, value: any) : void {
