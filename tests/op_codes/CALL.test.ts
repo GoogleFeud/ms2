@@ -22,9 +22,9 @@ describe("CALL", () => {
 
     it("Argument order", () => {
         Evaler.clear().interpret(Buffer.from([
-            OP_CODES.FN_START, 0x0, 0x6,
-            OP_CODES.PUSH_ARG, 0x0,
-            OP_CODES.PUSH_ARG, 0x1,
+            OP_CODES.FN_START, 0x0, 0x8,
+            OP_CODES.PUSH_VAR, 0x0, 0x0,
+            OP_CODES.PUSH_VAR, 0x0, 0x1,
             OP_CODES.SUB,
             OP_CODES.RETURN,
             OP_CODES.FN_END,
@@ -81,9 +81,9 @@ describe("CALL", () => {
 
     it("Native-native function calling custom function", () => {
         Evaler.clear().interpret(Buffer.from([
-            OP_CODES.FN_START, 0x0, 0x6,
-            OP_CODES.PUSH_ARG, 0x0,
-            OP_CODES.PUSH_ARG, 0x1,
+            OP_CODES.FN_START, 0x0, 0x8,
+            OP_CODES.PUSH_VAR, 0x0, 0x1,
+            OP_CODES.PUSH_VAR, 0x0, 0x2,
             OP_CODES.SUB,
             OP_CODES.RETURN,
             OP_CODES.FN_END,

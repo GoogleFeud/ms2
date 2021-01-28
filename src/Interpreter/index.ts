@@ -12,7 +12,6 @@ export const enum OP_CODES {
     PUSH_STR,
     PUSH_ARR,
     PUSH_VAR,
-    PUSH_ARG,
     ADD,
     DIV,
     MUL,
@@ -73,8 +72,7 @@ export class Interpreter {
     }
 
     clear() : this {
-        this.global.entries = {};
-        this.global.lastEntryId = -1;
+        this.global.entries.length = 0;
         this.stack.length = 0;
         return this;
     }
@@ -89,7 +87,7 @@ export class Interpreter {
      * @param args - Args for the PUSH_ARG op code
      * @param endByteArg - An extra byte 
      */
-    interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END, args?: Array<any>, endByteArg?: number) : number {
+    interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END, endByteArg?: number) : number {
         this.code = code;
         let address = offset;
         for(;;) {
@@ -125,9 +123,6 @@ export class Interpreter {
             case OP_CODES.PUSH_VAR: 
                 this.stack.push(env.get(code.readUInt16BE(address)));
                 address += 2;
-                break;
-            case OP_CODES.PUSH_ARG:
-                this.stack.push(args?.[code.readUInt8(address++)]);
                 break;
             case OP_CODES.ADD: {
                 const first = this.stack.pop();

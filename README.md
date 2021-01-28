@@ -215,7 +215,7 @@ addPropertyAlias("smth");
 
 ### Functions
 
-**Max amount of function args is 255!**
+**Function parameters get added ad variables, then deleted one the function is over**
 
 ```
 let something = 1;
@@ -231,14 +231,14 @@ LET 0x0 0x0
 PUSH_8 0x2
 LET 0x0 0x1
 FN_START 0x0 0xC // Starts the function, specifies the length of the function
-PUSH_ARG 0x0
-PUSH_ARG 0x1
+PUSH_VAR 0x0 0x3
+PUSH_VAR 0x0 0x4
 ADD // a + b
 PUSH_VAR 0x0 0x0
 ADD // a + b + something
 PUSH_8 0x1
 ADD // a + b + something + 1
-FN_END // Ends the function
+FN_END // Ends the function, all variables (including params get deleted)
 LET 0x0 0x3 // Assigns the third element to the function
 ```
 
@@ -254,8 +254,8 @@ let fn2 = (a, b) => {
 
 ```
 FN_START_INNER 0x0 0x6 0x0 // The first two bytes are the length of the function, the third is the ID of the inner function. 
-PUSH_ARG 0x0
-PUSH_ARG 0x1
+PUSH_VAR 0x0 0x0
+PUSH_VAR 0x0 0x1
 DIV
 RETURN
 FN_END_INNER 0x0
@@ -397,16 +397,16 @@ arr.push(i);
 
 ```
 PUSH_ARR 0x0 0x0
-LET 0x0 0x1 // let arr = [];
+LET // let arr = [];
 PUSH_8 0x0
-LET 0x0 0x0 // let i = 0;
+LET // let i = 0;
 PUSH_8 0xA // 10
 LESS_THAN, // i < 10
 JUMP_FALSE 0x0 0x10 // If i < 10 equals false, skip the entire loop sequence
-PUSH_VAR 0x0 0x1 // Get the array []
+PUSH_VAR 0x0 0x0 // Get the array []
 ACCESS_ALIAS 0x1 // Get the push function
-PUSH_VAR 0x0 0x0, // Get i
+PUSH_VAR 0x0 0x1, // Get i
 CALL_POP 0x1 // Call push with argument i, the "POP" means that the result of the function won't be pushed to the stack
-INC 0x0 0x0 // i++
+INC 0x0 0x1 // i++
 OP_CODES.GOTO 0x0 0xB // Go back to the beginning of the loop 
  ```

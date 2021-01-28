@@ -12,10 +12,10 @@ describe("COMPILER CONTEXT FUNCTIONS", () => {
         ctx.addOpCode(OP_CODES.FN_START);
         const functionSizeOffset = ctx.skip(2);
         ctx.enterFunction();
-        ctx.addOpCode(OP_CODES.PUSH_ARG);
-        ctx.addUnsigned8(0);
-        ctx.addOpCode(OP_CODES.PUSH_ARG);
-        ctx.addUnsigned8(1);
+        ctx.addOpCode(OP_CODES.PUSH_VAR);
+        ctx.addUnsigned16(0);
+        ctx.addOpCode(OP_CODES.PUSH_VAR);
+        ctx.addUnsigned16(1);
         ctx.addOpCode(OP_CODES.ADD);
         ctx.addOpCode(OP_CODES.RETURN);
         const fnSize = ctx.exitFunction();

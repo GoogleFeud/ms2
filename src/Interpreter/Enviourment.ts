@@ -1,11 +1,11 @@
 
 
 export class Enviourment {
-    entries: Record<number, any>
-    lastEntryId: number
-    constructor(entries?: Record<number, any>, lastEntryId?: number) {
-        this.entries = entries || {};
-        this.lastEntryId = lastEntryId ?? -1;
+    entries: Array<any>
+    cutQueue: Array<number>
+    constructor(entries?: Array<any>) {
+        this.entries = entries || [];
+        this.cutQueue = [];
     }
 
     get(key: number) : any {
@@ -13,11 +13,19 @@ export class Enviourment {
     }
 
     has(key: number) : boolean {
-        return key > this.lastEntryId;
+        return key > this.entries.length;
     }
 
     define(value: any) : void {
-        this.entries[++this.lastEntryId] = value;
+        this.entries.push(value);
+    }
+
+    defineLot(values: Array<any>) : void {
+        this.entries.push(...values);
+    }
+
+    cut(size: number) : void {
+        this.entries.length = this.entries.length - size;
     }
 
     set(key: number, value: any) : void {

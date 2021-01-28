@@ -37,12 +37,12 @@ describe("FUNCTION", () => {
 
         it("Function which returns a function", () => {
             Evaler.clear().interpret(Buffer.from([
-                OP_CODES.FN_START, 0x0, 0xD,
+                OP_CODES.FN_START, 0x0, 0xF,
     
-                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x6,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x8,
     
-                OP_CODES.PUSH_ARG, 0x0,
-                OP_CODES.PUSH_ARG, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.PUSH_VAR, 0x0, 0x1,
                 OP_CODES.ADD,
                 OP_CODES.RETURN,
     
@@ -61,12 +61,12 @@ describe("FUNCTION", () => {
         
         it("Function which creates a function and calls it", () => {
             Evaler.clear().interpret(Buffer.from([
-                OP_CODES.FN_START, 0x0, 0x13,
+                OP_CODES.FN_START, 0x0, 0x15,
     
-                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x6,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x8,
     
-                OP_CODES.PUSH_ARG, 0x0,
-                OP_CODES.PUSH_ARG, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.PUSH_VAR, 0x0, 0x1,
                 OP_CODES.ADD,
                 OP_CODES.RETURN,
     
@@ -91,13 +91,13 @@ describe("FUNCTION", () => {
                 expect(fn.call(undefined, 10, 25)).to.be.equal(10);
             });
             Evaler.interpret(Buffer.from([
-                OP_CODES.FN_START, 0x0, 0x11,
+                OP_CODES.FN_START, 0x0, 0x13,
     
                 OP_CODES.PUSH_VAR, 0x0, 0x0,
-                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x6,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x8,
     
-                OP_CODES.PUSH_ARG, 0x0,
-                OP_CODES.PUSH_ARG, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x2,
                 OP_CODES.ADD,
                 OP_CODES.RETURN,
     
@@ -113,14 +113,14 @@ describe("FUNCTION", () => {
     
         it("Function returns a function which returns a function", () => {
             Evaler.clear().interpret(Buffer.from([
-                OP_CODES.FN_START, 0x0, 0x14,
+                OP_CODES.FN_START, 0x0, 0x16,
     
-                OP_CODES.FN_START_INNER, 0x0, 0x0, 0xD,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0xF,
     
-                OP_CODES.FN_START_INNER, 0x1, 0x0, 0x6,
+                OP_CODES.FN_START_INNER, 0x1, 0x0, 0x8,
     
-                OP_CODES.PUSH_ARG, 0x0,
-                OP_CODES.PUSH_8, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.PUSH_VAR, 0x0, 0x1,
                 OP_CODES.ADD, 
                 OP_CODES.RETURN,
     
@@ -136,7 +136,7 @@ describe("FUNCTION", () => {
                 OP_CODES.END
             ]));
             const fn = Evaler.stack.pop();
-            expect(fn.call().call().call(undefined, 5)).to.be.equal(6);
+            expect(fn.call().call(undefined, 1).call(undefined, 5)).to.be.equal(6);
         });
     });
 
