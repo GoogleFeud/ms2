@@ -39,7 +39,7 @@ describe("FUNCTION", () => {
             Evaler.clear().interpret(Buffer.from([
                 OP_CODES.FN_START, 0x0, 0xD,
     
-                OP_CODES.FN_START_INNER, 0x0, 0x6, 0x0,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x6,
     
                 OP_CODES.PUSH_ARG, 0x0,
                 OP_CODES.PUSH_ARG, 0x1,
@@ -48,9 +48,6 @@ describe("FUNCTION", () => {
     
                 OP_CODES.FN_END_INNER, 0x0,
     
-                //OP_CODES.PUSH_8, 0x5,
-                // OP_CODES.PUSH_8, 0x5,
-                // OP_CODES.CALL, 0x2,
                 OP_CODES.RETURN,
     
                 OP_CODES.FN_END,
@@ -66,7 +63,7 @@ describe("FUNCTION", () => {
             Evaler.clear().interpret(Buffer.from([
                 OP_CODES.FN_START, 0x0, 0x13,
     
-                OP_CODES.FN_START_INNER, 0x0, 0x6, 0x0,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x6,
     
                 OP_CODES.PUSH_ARG, 0x0,
                 OP_CODES.PUSH_ARG, 0x1,
@@ -97,7 +94,7 @@ describe("FUNCTION", () => {
                 OP_CODES.FN_START, 0x0, 0x11,
     
                 OP_CODES.PUSH_VAR, 0x0, 0x0,
-                OP_CODES.FN_START_INNER, 0x0, 0x6, 0x0,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0x6,
     
                 OP_CODES.PUSH_ARG, 0x0,
                 OP_CODES.PUSH_ARG, 0x1,
@@ -118,9 +115,9 @@ describe("FUNCTION", () => {
             Evaler.clear().interpret(Buffer.from([
                 OP_CODES.FN_START, 0x0, 0x14,
     
-                OP_CODES.FN_START_INNER, 0x0, 0xD, 0x0,
+                OP_CODES.FN_START_INNER, 0x0, 0x0, 0xD,
     
-                OP_CODES.FN_START_INNER, 0x0, 0x6, 0x1,
+                OP_CODES.FN_START_INNER, 0x1, 0x0, 0x6,
     
                 OP_CODES.PUSH_ARG, 0x0,
                 OP_CODES.PUSH_8, 0x1,

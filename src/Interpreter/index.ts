@@ -280,9 +280,9 @@ export class Interpreter {
                 break;
             }
             case OP_CODES.FN_START_INNER: {
-                const size = code.readUInt16BE(address);
-                const id = code.readUInt8(address += 2);
-                this.stack.push(new MSFunction(++address, this, id));
+                const id = code.readUInt8(address);
+                const size = code.readUInt16BE(++address);
+                this.stack.push(new MSFunction(address += 2, this, id));
                 address += size + 2; // Account for the FN_END_INNER
                 break;
             }
@@ -336,5 +336,6 @@ export class Interpreter {
             }
         }
     }
+
 
 }
