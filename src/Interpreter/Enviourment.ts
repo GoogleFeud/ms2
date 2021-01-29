@@ -1,43 +1,36 @@
 
 
-export class Enviourment {
-    entries: Array<any>
-    cutQueue: Array<number>
-    constructor(entries?: Array<any>) {
-        this.entries = entries || [];
-        this.cutQueue = [];
+export class Enviourment extends Array {
+    constructor() {
+        super();
     }
 
     get(key: number) : any {
-        return this.entries[key];
+        return this[key];
     }
 
     has(key: number) : boolean {
-        return key > this.entries.length;
+        return key > this.length;
     }
 
     define(value: any) : void {
-        this.entries.push(value);
+        this.push(value);
     }
 
     defineLot(values: Array<any>) : void {
-        this.entries.push(...values);
-    }
-
-    cut(size: number) : void {
-        this.entries.length = this.entries.length - size;
+        this.push(...values);
     }
 
     set(key: number, value: any) : void {
-        this.entries[key] = value;
+        this[key] = value;
     }
 
     inc(key: number) : number {
-        return ++this.entries[key];
+        return ++this[key];
     }
 
     dec(key: number) : number {
-        return --this.entries[key];
+        return --this[key];
     }
 
     

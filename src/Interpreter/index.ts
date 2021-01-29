@@ -72,7 +72,7 @@ export class Interpreter {
     }
 
     clear() : this {
-        this.global.entries.length = 0;
+        this.global.length = 0;
         this.stack.length = 0;
         return this;
     }
@@ -84,7 +84,6 @@ export class Interpreter {
      * @param env - The current enviourment. Default is global
      * @param offset - Where to start interpreting the code
      * @param endByte - Where to stop interpreting the code
-     * @param args - Args for the PUSH_ARG op code
      * @param endByteArg - An extra byte 
      */
     interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END, endByteArg?: number) : number {
