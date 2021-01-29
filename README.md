@@ -215,7 +215,6 @@ addPropertyAlias("smth");
 
 ### Functions
 
-**Function parameters get added ad variables, then deleted one the function is over**
 
 ```
 let something = 1;
@@ -239,7 +238,7 @@ ADD // a + b + something
 PUSH_8 0x1
 ADD // a + b + something + 1
 FN_END // Ends the function, all variables (including params get deleted)
-LET 0x0 0x3 // Assigns the third element to the function
+LET 0x0 0x5 // Assigns the third element to the function
 ```
 
 #### Inner functions

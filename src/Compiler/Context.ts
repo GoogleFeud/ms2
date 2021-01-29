@@ -107,14 +107,15 @@ export class CompilerContext {
     skip(bytes: number) : number {
         const oldOffset = this.offset;
         this.offset += bytes;
+        if (this.blockSizes.length) this.blockSizes[this.blockSizes.length - 1] += bytes;
         return oldOffset;
     }
 
-    enterFunction() : void {
+    enterBlock() : void {
         this.blockSizes.push(0);
     }
 
-    exitFunction() : number {
+    exitBlock() : number {
         const funcSize = this.blockSizes.pop() as number;
         if (this.blockSizes.length) {
             this.blockSizes[this.blockSizes.length - 1] += funcSize;
