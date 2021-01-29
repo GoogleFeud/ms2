@@ -44,6 +44,7 @@ export const enum OP_CODES {
     CALL,
     CALL_POP,
     EXPORT,
+    EXPORT_ALIAS,
     OR,
     AND,
     EQUAL,
@@ -312,6 +313,11 @@ export class Interpreter {
                 const item = this.stack.pop();
                 const size = code.readUInt16BE(address);
                 this.exports[code.toString("utf-8", address += 2, address += size)] = item;
+                break;
+            }
+            case OP_CODES.EXPORT_ALIAS: {
+                const item = this.stack.pop();
+                this.exports[PropertyAlias[code.readUInt8(address++)]] = item;
                 break;
             }
             case OP_CODES.BREAKPOINT: 
