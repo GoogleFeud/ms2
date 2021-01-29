@@ -22,6 +22,7 @@
         - [Not](https://github.com/GoogleFeud/ms2#not)
         - [If](https://github.com/GoogleFeud/ms2#if)
         - [If-Else-If-Else](https://github.com/GoogleFeud/ms2#if---else-if---else)
+    - [Loops](https://github.com/GoogleFeud/ms2#loops)
 
 ## Compiler to bytecode
 
@@ -124,26 +125,18 @@ PUSH_8 0xx 0xx // Push address of the obj variable
 ACCESS_STR 0x0 0x8 73 6f 6d 65 50 72 6f 70 // Push value inside "someProp" to the stack
 ```
 
-Without enabling the `ease-of-access` option, this is how you would import objects:
-
-```js
-globals: {
-    obj: Context.importObject([["prop", 1]]); // {prop: 1} essentially  
-}
-```
-
 ### Variables
 
-**LET, PUSH_VAR, and ASSIGN statements only accept unsigned integers**
+**LET, PUSH_VAR, and ASSIGN op code only accept unsigned integers**
 
 ```let pi = 3.14;```
 
 ```
 PUSH_32 40 48 f5 c3 // Push 3.14 to the stack
-LET 0x0 0x1 // Define variable 
+LET // Define variable 
 ```
 
-**The LET statement doesn't pop the last element in the stack**
+**The LET op code doesn't pop the last element in the stack**
 
 Variable names are translated from strings to a unsigned 16-bit number. The variable value is pushed to the stack beforehand. That means that there are **65535** possible variables. Variable names are incremented, so the first declared variable will have the name `0`, then `1`, and so on.
 
@@ -185,7 +178,7 @@ Most native object properties are mapped to an index, which means the interprete
 
 ```
 PUSH_VAL 0x0 0x1 // Push a to stack
-ACCESS_ALIAS 0x0 0x0 // "length"'s index is 0
+ACCESS_ALIAS 0x0 // "length"'s index is 0
 ```
 
 #### Custom objects
@@ -194,7 +187,7 @@ There are two ways to access properties of custom objects:
 
 **ACCESS_STR**
 
-"smth" gets converted to hex
+"smth" gets converted to hex, with the first 2 bytes being it's length
 
 ```
 a->smth;
@@ -226,9 +219,9 @@ let myFn = |a, b| => {
 
 ```
 PUSH_8 0x1
-LET 0x0 0x0
+LET
 PUSH_8 0x2
-LET 0x0 0x1
+LET
 FN_START 0x0 0xC // Starts the function, specifies the length of the function
 PUSH_VAR 0x0 0x3
 PUSH_VAR 0x0 0x4
