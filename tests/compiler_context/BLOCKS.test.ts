@@ -35,7 +35,10 @@ describe("COMPILER CONTEXT BLOCKS", () => {
          *    doSomething();
          *  }
          * }
+         * 
+         * The bytecode below is around ~0.10ms slower than the normal javascript code
          */
+
         ctx.addNumber(0, true); ctx.addOpCode(OP_CODES.LET); // let i = 0; The value of i (0) still stays in the stack
         ctx.addNumber(10, true); ctx.addOpCode(OP_CODES.LESS_THAN); // lastPushedValue < 10
         ctx.addOpCode(OP_CODES.JUMP_FALSE);
