@@ -277,7 +277,7 @@ export class Interpreter {
                 const id = code.readUInt8(address);
                 const size = code.readUInt16BE(++address);
                 this.stack.push(new MSFunction(address += 2, this, id));
-                address += size + 2; // Account for the FN_END_INNER
+                address += size + 2; // Account for the FN_END_INNER code
                 break;
             }
             case OP_CODES.RETURN:
@@ -310,14 +310,12 @@ export class Interpreter {
                 address = code.readUInt16BE(address);
                 break;
             case OP_CODES.EXPORT: {
-                const item = this.stack.pop();
                 const size = code.readUInt16BE(address);
-                this.exports[code.toString("utf-8", address += 2, address += size)] = item;
+                this.exports[code.toString("utf-8", address += 2, address += size)] = this.stack.pop();
                 break;
             }
             case OP_CODES.EXPORT_ALIAS: {
-                const item = this.stack.pop();
-                this.exports[PropertyAlias[code.readUInt8(address++)]] = item;
+                this.exports[PropertyAlias[code.readUInt8(address++)]] = this.stack.pop();
                 break;
             }
             case OP_CODES.BREAKPOINT: 
