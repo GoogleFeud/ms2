@@ -26,9 +26,10 @@ describe("COMPILER CONTEXT BLOCKS", () => {
     it("Double block", () => {
         const ctx = new CompilerContext({bufferSize: 1024});
         Evaler.clear();
-        Evaler.global.define(() => {
+        Evaler.global[0] = () => {
             expect(true).to.be.equal(true);
-        }); // the doSomething function
+        }; // the doSomething function
+        Evaler.assignIncCounter = 1;
         /** Let's say we are the parsing the following:
          * for (let i=0; i < 10; i++) {
          *   if (i == 9) {
@@ -36,10 +37,12 @@ describe("COMPILER CONTEXT BLOCKS", () => {
          *  }
          * }
          * 
-         * The bytecode below is around ~0.10ms slower than the normal javascript code
+         * (~~The bytecode below is around ~0.10ms slower than the normal javascript code~~)
+         * Using the ALLOC OP_CODE along with ASSIGN_INC op code, the code becomes FASTER than normal js code.
          */
 
-        ctx.addNumber(0, true); ctx.addOpCode(OP_CODES.LET); // let i = 0; The value of i (0) still stays in the stack
+        ctx.addOpCode(OP_CODES.ALLOC); ctx.addUnsigned16(1);
+        ctx.addNumber(0, true); ctx.addOpCode(OP_CODES.ASSIGN_INC); // let i = 0; The value of i (0) still stays in the stack
         ctx.addNumber(10, true); ctx.addOpCode(OP_CODES.LESS_THAN); // lastPushedValue < 10
         ctx.addOpCode(OP_CODES.JUMP_FALSE);
         const jumpFalseOffset = ctx.skip(2);

@@ -23,10 +23,13 @@ export const enum OP_CODES {
     ACCESS,
     ACCESS_STR,
     ACCESS_ALIAS,
+    ALLOC,
     LET,
     LET_POP,
     ASSIGN,
     ASSIGN_POP,
+    ASSIGN_INC,
+    ASSIGN_INC_POP,
     ASSIGN_PROP,
     ASSIGN_PROP_POP,
     ASSIGN_PROP_ALIAS,
@@ -65,16 +68,19 @@ export class Interpreter {
     returnValue: any
     private pausedAt: number
     onBreakpoint?: () => boolean; 
+    assignIncCounter: number
     constructor() {
         this.stack = [];
         this.exports = {};
         this.global = new Enviourment();
         this.pausedAt = 0;
+        this.assignIncCounter = 0;
     }
 
     clear() : this {
         this.global.length = 0;
         this.stack.length = 0;
+        this.assignIncCounter = 0;
         return this;
     }
 
@@ -224,6 +230,10 @@ export class Interpreter {
                 this.stack.push(res);
                 break;
             }
+            case OP_CODES.ALLOC:
+                env.length = env.length + code.readUInt16BE(address);
+                address += 2;
+                break;
             case OP_CODES.LET: 
                 env.define(this.stack[this.stack.length - 1]);
                 break;
@@ -231,12 +241,18 @@ export class Interpreter {
                 env.define(this.stack.pop());
                 break;
             case OP_CODES.ASSIGN:
-                env.set(code.readUInt16BE(address), this.stack[this.stack.length - 1]);
+                env[code.readUInt16BE(address)] = this.stack[this.stack.length - 1];
                 address += 2;
                 break;
             case OP_CODES.ASSIGN_POP:
-                env.set(code.readUInt16BE(address), this.stack.pop());
+                env[code.readUInt16BE(address)] = this.stack.pop();
                 address += 2;
+                break;
+            case OP_CODES.ASSIGN_INC:
+                env[this.assignIncCounter++] = this.stack[this.stack.length - 1];
+                break;
+            case OP_CODES.ASSIGN_INC_POP:
+                env[this.assignIncCounter++] = this.stack.pop();
                 break;
             case OP_CODES.ASSIGN_PROP: {
                 const value = this.stack.pop();
