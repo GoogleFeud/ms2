@@ -137,35 +137,19 @@ ACCESS_STR 0x0 0x8 73 6f 6d 65 50 72 6f 70 // Push value inside "someProp" to th
 
 ### Variables
 
-**LET, PUSH_VAR, and ASSIGN op code only accept unsigned integers**
+All variables (including function params) get stored in an array. There can be max **65,535** variables. There is **no** garbage collector, which means all the variables stored in the array stay until the array gets garbage collected, or gets cleared (via `arr.length = 0`). Here an index of a variable is called an **address**. 
 
-```let pi = 3.14;```
+**The first two bytes of the bytecode tell the interpreter how much space to make for variables.**
 
 ```
-PUSH_32 40 48 f5 c3 // Push 3.14 to the stack
-LET // Define variable 
+let a = 5;
 ```
 
-**The LET op code doesn't pop the last element in the stack**
-
-Variable names are translated from strings to a unsigned 16-bit number. The variable value is pushed to the stack beforehand. That means that there are **65535** possible variables. Variable names are incremented, so the first declared variable will have the name `0`, then `1`, and so on.
-
-That makes importing global variables a lot harder, that's why you should compile the code and run the code with the **same set of global variables**:
-
-```js
-const Compiler = require("ms2");
-
-const bytecode = Compiler.toBuffer(`print(var1);`, {
-    globals: ["var1", "print"]; // The compiler needs to know IN ADVANCE, what the global variables are and what are their indexes (var1's index is 0)
-});
-
-Compiler.eval(bytecode, {
-    globals: {
-        var1: 3.14,
-        print: console.log
-    } // When evaluating, you need to specify the globals again, but this time with their actual values. The order needs to remain the same.
-});
 ```
+PUSH_8 0x5
+ASSIGN 0x0 0x1 // Assign value 5 to address "0x0 0x1"
+```
+
 
 ### Property access
 

@@ -13,8 +13,9 @@ export class MSFunction {
     }
 
     call<T>(thisArg: any, ...args: Array<any>) : T {
-        this.ctx.global.defineLot(args);
-        this.ctx.interpret(this.ctx.code as Buffer, this.ctx.global, this.offset, this.endByteType, this.id);
+        if (this.id === undefined) this.ctx.arguments.length = 0; 
+        this.ctx.arguments.push(...args);
+        this.ctx.interpret(this.offset, this.endByteType, this.id);
         const rtrnValue = this.ctx.returnValue;
         delete this.ctx.returnValue;
         return rtrnValue;

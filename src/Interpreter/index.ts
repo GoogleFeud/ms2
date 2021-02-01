@@ -1,5 +1,4 @@
 
-import { Enviourment } from "./Enviourment";
 import { MSFunction } from "./structs/MSFunction";
 import { PropertyAlias } from "../util/default_property_alias";
 
@@ -12,6 +11,7 @@ export const enum OP_CODES {
     PUSH_STR,
     PUSH_ARR,
     PUSH_VAR,
+    PUSH_ARG,
     ADD,
     DIV,
     MUL,
@@ -23,13 +23,10 @@ export const enum OP_CODES {
     ACCESS,
     ACCESS_STR,
     ACCESS_ALIAS,
-    ALLOC,
     LET,
     LET_POP,
     ASSIGN,
     ASSIGN_POP,
-    ASSIGN_INC,
-    ASSIGN_INC_POP,
     ASSIGN_PROP,
     ASSIGN_PROP_POP,
     ASSIGN_PROP_ALIAS,
@@ -63,289 +60,289 @@ export const enum OP_CODES {
 export class Interpreter {
     stack: Array<any>
     exports: Record<string, any>
-    global: Enviourment
-    code?: Buffer
+    memory: Array<any>
+    arguments: Array<any>
+    code: Buffer
     returnValue: any
     private pausedAt: number
+    currentMemoryAddress: number
     onBreakpoint?: () => boolean; 
-    assignIncCounter: number
-    constructor() {
+    constructor(code: Buffer) {
+        this.code = code;
         this.stack = [];
         this.exports = {};
-        this.global = new Enviourment();
-        this.pausedAt = 0;
-        this.assignIncCounter = 0;
+        this.memory = new Array(code.readUInt16BE(0));
+        this.arguments = [];
+        this.pausedAt = 2;
+        this.currentMemoryAddress = 0;
     }
 
-    clear() : this {
-        this.global.length = 0;
+    reuse(code: Buffer) : this {
         this.stack.length = 0;
-        this.assignIncCounter = 0;
+        this.code = code;
+        this.exports = {};
+        this.memory = new Array(code.readUInt16BE(0));
+        this.pausedAt = 2;
+        return this;
+    }
+
+    addGlobal(thing: any, index = this.currentMemoryAddress) : this {
+        this.memory[index] = thing;
+        this.currentMemoryAddress++;
         return this;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     /**
      * 
-     * @param code - The buffer from the compiler
-     * @param env - The current enviourment. Default is global
      * @param offset - Where to start interpreting the code
      * @param endByte - Where to stop interpreting the code
      * @param endByteArg - An extra byte 
      */
-    interpret(code: Buffer, env = this.global, offset = this.pausedAt, endByte = OP_CODES.END, endByteArg?: number) : number {
-        this.code = code;
-        let address = offset;
+    interpret(offset = this.pausedAt, endByte = OP_CODES.END, endByteArg?: number) : number {
+        const code = this.code;
+        const memory = this.memory;
+        const stack = this.stack;
         for(;;) {
-            switch(code[address++]) {
+            switch(code[offset++]) {
             case OP_CODES.PUSH_32:
-                this.stack.push(code.readFloatBE(address));
-                address += 4;
+                stack.push(code.readFloatBE(offset));
+                offset += 4;
                 break;
             case OP_CODES.PUSH_16:
-                this.stack.push(code.readInt16BE(address));
-                address += 2;
+                stack.push(code.readInt16BE(offset));
+                offset += 2;
                 break;
             case OP_CODES.PUSH_8:
-                this.stack.push(code.readInt8(address++));
+                stack.push(code.readInt8(offset++));
                 break;
             case OP_CODES.PUSH_BOOL:
-                this.stack.push(Boolean(code.readInt8(address++)));
+                stack.push(Boolean(code.readInt8(offset++)));
                 break;
             case OP_CODES.PUSH_UNDEFINED:
-                this.stack.push(undefined);
+                stack.push(undefined);
                 break;
             case OP_CODES.PUSH_STR: {
-                const size = code.readUInt16BE(address);
-                this.stack.push(code.toString("utf-8", address += 2, address += size));
+                const size = code.readUInt16BE(offset);
+                stack.push(code.toString("utf-8", offset += 2, offset += size));
                 break;
             }
             case OP_CODES.PUSH_ARR: {
-                const stackLen = this.stack.length;
-                this.stack.push(this.stack.splice(stackLen - code.readInt16BE(address), stackLen));
-                address += 2;
+                const stackLen = stack.length;
+                stack.push(stack.splice(stackLen - code.readInt16BE(offset), stackLen));
+                offset += 2;
                 break;
             }
             case OP_CODES.PUSH_VAR: 
-                this.stack.push(env.get(code.readUInt16BE(address)));
-                address += 2;
+                stack.push(memory[code.readUInt16BE(offset)]);
+                offset += 2;
+                break;
+            case OP_CODES.PUSH_ARG:
+                stack.push(this.arguments[code.readUInt8(offset++)]);
                 break;
             case OP_CODES.ADD: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second + first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second + first);
                 break;
             }
             case OP_CODES.SUB: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second - first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second - first);
                 break;
             }
             case OP_CODES.DIV: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second / first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second / first);
                 break;
             }
             case OP_CODES.MUL:
-                this.stack.push(this.stack.pop() * this.stack.pop());
+                stack.push(stack.pop() * stack.pop());
                 break;
             case OP_CODES.INC:
-                this.stack.push(env.inc(code.readUInt16BE(address)));
-                address += 2;
+                stack.push(++memory[code.readUInt16BE(offset)]);
+                offset += 2;
                 break;
             case OP_CODES.DEC:
-                this.stack.push(env.dec(code.readUInt16BE(address)));
-                address += 2;
+                stack.push(--memory[code.readUInt16BE(offset)]);
+                offset += 2;
                 break;
             case OP_CODES.INC_POP:
-                env.inc(code.readUInt16BE(address));
-                address += 2;
+                ++memory[code.readUInt16BE(offset)];
+                offset += 2;
                 break;
             case OP_CODES.DEC_POP:
-                env.dec(code.readUInt16BE(address));
-                address += 2;
+                --memory[code.readUInt16BE(offset)];
+                offset += 2;
                 break;
             case OP_CODES.EQUAL: 
-                this.stack.push(this.stack.pop() === this.stack.pop());
+                stack.push(stack.pop() === stack.pop());
                 break;
             case OP_CODES.LESS_THAN: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second < first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second < first);
                 break;
             }
             case OP_CODES.LESS_OR_EQUAL: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second <= first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second <= first);
                 break;
             }
             case OP_CODES.GREATER_THAN: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second > first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second > first);
                 break;
             }
             case OP_CODES.GREATER_OR_EQUAL: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second >= first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second >= first);
                 break;
             }
             case OP_CODES.AND: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second && first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second && first);
                 break;
             }
             case OP_CODES.OR: {
-                const first = this.stack.pop();
-                const second = this.stack.pop();
-                this.stack.push(second || first);
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second || first);
                 break;
             }
             case OP_CODES.NOT:
-                this.stack.push(!this.stack.pop());
+                stack.push(!stack.pop());
                 break;
             case OP_CODES.ACCESS: {
-                const item = this.stack.pop();
-                this.stack.push(item[code.readUInt16BE(address)]);
-                address += 2;
+                const item = stack.pop();
+                stack.push(item[code.readUInt16BE(offset)]);
+                offset += 2;
                 break;
             }
             case OP_CODES.ACCESS_STR: {
-                const item = this.stack.pop();
-                const size = code.readUInt16BE(address);
-                let res = item[code.toString("utf-8", address += 2, address += size)];
+                const item = stack.pop();
+                const size = code.readUInt16BE(offset);
+                let res = item[code.toString("utf-8", offset += 2, offset += size)];
                 if (typeof res === "function") res = res.bind(item);
-                this.stack.push(res);
+                stack.push(res);
                 break;
             }
             case OP_CODES.ACCESS_ALIAS: {
-                const item = this.stack.pop();
-                let res = item[PropertyAlias[code.readUInt8(address++) as 0]];
+                const item = stack.pop();
+                let res = item[PropertyAlias[code.readUInt8(offset++) as 0]];
                 if (typeof res === "function") res = res.bind(item);
-                this.stack.push(res);
+                stack.push(res);
                 break;
             }
-            case OP_CODES.ALLOC:
-                env.length = env.length + code.readUInt16BE(address);
-                address += 2;
-                break;
-            case OP_CODES.LET: 
-                env.define(this.stack[this.stack.length - 1]);
+            case OP_CODES.LET:
+                memory[this.currentMemoryAddress++] = stack[stack.length - 1];
                 break;
             case OP_CODES.LET_POP:
-                env.define(this.stack.pop());
+                memory[this.currentMemoryAddress++] = stack.pop();
                 break;
             case OP_CODES.ASSIGN:
-                env[code.readUInt16BE(address)] = this.stack[this.stack.length - 1];
-                address += 2;
+                memory[code.readUInt16BE(offset)] = stack[stack.length - 1];
+                offset += 2;
                 break;
             case OP_CODES.ASSIGN_POP:
-                env[code.readUInt16BE(address)] = this.stack.pop();
-                address += 2;
-                break;
-            case OP_CODES.ASSIGN_INC:
-                env[this.assignIncCounter++] = this.stack[this.stack.length - 1];
-                break;
-            case OP_CODES.ASSIGN_INC_POP:
-                env[this.assignIncCounter++] = this.stack.pop();
+                memory[code.readUInt16BE(offset)] = stack.pop();
+                offset += 2;
                 break;
             case OP_CODES.ASSIGN_PROP: {
-                const value = this.stack.pop();
-                const propToModify = this.stack.pop();
-                const propParent = this.stack.pop();
-                this.stack.push(propParent[propToModify] = value);
+                const value = stack.pop();
+                const propToModify = stack.pop();
+                const propParent = stack.pop();
+                stack.push(propParent[propToModify] = value);
                 break;
             }
             case OP_CODES.ASSIGN_PROP_POP: {
-                const value = this.stack.pop();
-                const propToModify = this.stack.pop();
-                const propParent = this.stack.pop();
+                const value = stack.pop();
+                const propToModify = stack.pop();
+                const propParent = stack.pop();
                 propParent[propToModify] = value;
                 break;
             }
             case OP_CODES.ASSIGN_PROP_ALIAS: {
-                const value = this.stack.pop();
-                const propToModify = PropertyAlias[this.stack.pop()];
-                const propParent = this.stack.pop();
-                this.stack.push(propParent[propToModify] = value);
+                const value = stack.pop();
+                const propToModify = PropertyAlias[stack.pop()];
+                const propParent = stack.pop();
+                stack.push(propParent[propToModify] = value);
                 break;
             }
             case OP_CODES.ASSIGN_PROP_ALIAS_POP: {
-                const value = this.stack.pop();
-                const propToModify = PropertyAlias[this.stack.pop()];
-                const propParent = this.stack.pop();
+                const value = stack.pop();
+                const propToModify = PropertyAlias[stack.pop()];
+                const propParent = stack.pop();
                 propParent[propToModify] = value;
                 break;
             }
             case OP_CODES.FN_START: {
-                const size = code.readUInt16BE(address);
-                address += 2;
-                this.stack.push(new MSFunction(address, this));
-                address += size + 1; // Account for the FN_END code
+                const size = code.readUInt16BE(offset);
+                offset += 2;
+                stack.push(new MSFunction(offset, this));
+                offset += size + 1; // Account for the FN_END code
                 break;
             }
             case OP_CODES.FN_START_INNER: {
-                const id = code.readUInt8(address);
-                const size = code.readUInt16BE(++address);
-                this.stack.push(new MSFunction(address += 2, this, id));
-                address += size + 2; // Account for the FN_END_INNER code
+                const id = code.readUInt8(offset);
+                const size = code.readUInt16BE(++offset);
+                stack.push(new MSFunction(offset += 2, this, id));
+                offset += size + 2; // Account for the FN_END_INNER code
                 break;
             }
             case OP_CODES.RETURN:
-                this.returnValue = this.stack.pop();
+                this.returnValue = stack.pop();
                 break;
             case OP_CODES.CALL: {
-                const stackLen = this.stack.length;
-                const args = this.stack.splice(stackLen - code.readUInt8(address++), stackLen);
-                this.stack.push(this.returnValue = this.stack.pop().call(undefined, ...args)); 
+                const stackLen = stack.length;
+                const args = stack.splice(stackLen - code.readUInt8(offset++), stackLen);
+                stack.push(this.returnValue = stack.pop().call(undefined, ...args)); 
                 break;
             }
             case OP_CODES.CALL_POP: {
-                const stackLen = this.stack.length;
-                const args = this.stack.splice(stackLen - code.readUInt8(address++), stackLen);
-                this.returnValue = this.stack.pop().call(undefined, ...args); 
+                const stackLen = stack.length;
+                const args = stack.splice(stackLen - code.readUInt8(offset++), stackLen);
+                this.returnValue = stack.pop().call(undefined, ...args); 
                 break;
             }
             case OP_CODES.JUMP_FALSE:
-                if (!this.stack.pop()) address += code.readUInt16BE(address);
-                address += 2;
+                if (!stack.pop()) offset += code.readUInt16BE(offset);
+                offset += 2;
                 break;
             case OP_CODES.JUMP_TRUE:
-                if (this.stack.pop()) address += code.readUInt16BE(address);
-                address += 2;
+                if (stack.pop()) offset += code.readUInt16BE(offset);
+                offset += 2;
                 break;
             case OP_CODES.JUMP:
-                address += code.readUInt16BE(address) + 2;
+                offset += code.readUInt16BE(offset) + 2;
                 break;
             case OP_CODES.GOTO:
-                address = code.readUInt16BE(address);
+                offset = code.readUInt16BE(offset);
                 break;
             case OP_CODES.EXPORT: {
-                const size = code.readUInt16BE(address);
-                this.exports[code.toString("utf-8", address += 2, address += size)] = this.stack.pop();
+                const size = code.readUInt16BE(offset);
+                this.exports[code.toString("utf-8", offset += 2, offset += size)] = stack.pop();
                 break;
             }
             case OP_CODES.EXPORT_ALIAS: {
-                this.exports[PropertyAlias[code.readUInt8(address++)]] = this.stack.pop();
+                this.exports[PropertyAlias[code.readUInt8(offset++)]] = stack.pop();
                 break;
             }
             case OP_CODES.BREAKPOINT: 
-                this.pausedAt = address;
-                if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(code, env, this.pausedAt, endByte);
-                return address;
+                this.pausedAt = offset;
+                if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(this.pausedAt, endByte);
+                return offset;
             case endByte:
-                if (endByteArg) {
-                    if (code.readUInt8(address) === endByteArg) return address + 1;
-                    break;
-                }
-                return address;
+                if (endByteArg) return offset + 1;
+                return offset;
             default:
-                throw `Unknown OP code at byte ${address}`;
+                throw `Unknown OP code at byte ${offset}`;
             }
         }
     }
