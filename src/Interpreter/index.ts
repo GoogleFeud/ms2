@@ -80,9 +80,21 @@ export class Interpreter {
     reuse(code: Buffer) : this {
         this.stack.length = 0;
         this.code = code;
+        this.arguments.length = 0;
         this.exports = {};
         this.memory = new Array(code.readUInt16BE(0));
         this.pausedAt = 2;
+        this.currentMemoryAddress = 0;
+        return this;
+    }
+
+    clear() : this {
+        this.stack.length = 0;
+        this.arguments.length = 0;
+        this.exports = {};
+        this.memory = new Array(this.code.readUInt16BE(0));
+        this.pausedAt = 2;
+        this.currentMemoryAddress = 0;
         return this;
     }
 

@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Programming language to create and extend mafia roles. Translates source code to bytecode which can be easily stored in a database for faster execution.",
   "main": "dist/index.js",
-  "dependencies": {
-    "typescript": "^4.1.3"
-  },
   "devDependencies": {
     "@types/chai": "^4.2.14",
     "@types/mocha": "^8.2.0",
@@ -15,10 +12,12 @@
     "chai": "^4.2.0",
     "eslint": "^7.18.0",
     "mocha": "^8.2.1",
-    "ts-node": "^9.1.1"
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3"
   },
   "scripts": {
     "test": "mocha -r ts-node/register 'tests/**/*.ts' --slow 0",
+    "bench": "ts-node -p benchmarks/index.ts",
     "start": "tsc && node ."
   },
   "repository": {

@@ -31,6 +31,7 @@
   },
   "exclude": [
     "./tests/",
-    "./dist/"
+    "./dist/",
+    "./benchmarks/"
   ]
 }
