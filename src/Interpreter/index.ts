@@ -53,6 +53,7 @@ export const enum OP_CODES {
     LESS_THAN,
     GREATER_OR_EQUAL,
     LESS_OR_EQUAL,
+    BREAK,
     BREAKPOINT,
     END
 }
@@ -337,6 +338,8 @@ export class Interpreter {
             case OP_CODES.GOTO:
                 offset = code.readUInt16BE(offset);
                 break;
+            case OP_CODES.BREAK:
+                return offset;
             case OP_CODES.EXPORT: {
                 const size = code.readUInt16BE(offset);
                 this.exports[code.toString("utf-8", offset += 2, offset += size)] = stack.pop();
