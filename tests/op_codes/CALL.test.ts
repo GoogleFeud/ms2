@@ -87,9 +87,9 @@ describe("CALL", () => {
     it("Native-native function calling custom function", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x1,
-            OP_CODES.FN_START, 0x0, 0x8,
-            OP_CODES.PUSH_VAR, 0x0, 0x1,
-            OP_CODES.PUSH_VAR, 0x0, 0x2,
+            OP_CODES.FN_START, 0x0, 0x6,
+            OP_CODES.PUSH_ARG, 0x0,
+            OP_CODES.PUSH_ARG, 0x1,
             OP_CODES.SUB,
             OP_CODES.RETURN,
             OP_CODES.FN_END,
@@ -100,6 +100,25 @@ describe("CALL", () => {
         const sortfn = Evaler.memory[0];
         const arr = [5, 4, 3, 1, 2].sort((a, b) => sortfn.call(a, b));
         expect(arr).members([1, 2, 3, 4, 5]);
+    });
+
+    it("Return value", () => {
+        const Evaler = new Interpreter(Buffer.from([
+            0x0, 0x2,
+            OP_CODES.FN_START, 0x0, 0x7,
+
+            OP_CODES.INC, 0x0, 0x0,
+            OP_CODES.RETURN,
+            OP_CODES.INC, 0x0, 0x0,
+
+            OP_CODES.FN_END,
+
+            OP_CODES.LET,
+            OP_CODES.END
+        ]));
+        Evaler.addGlobal(1);
+        Evaler.interpret();
+        expect(Evaler.memory[1].call()).to.be.equal(2);
     });
 
 });
