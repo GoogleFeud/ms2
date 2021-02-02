@@ -1,5 +1,6 @@
 
 import { Interpreter, OP_CODES } from "../../src/Interpreter";
+import { addPropertyAlias } from "../../src/util";
 import { expect } from "chai";
 
 
@@ -120,5 +121,6 @@ describe("CALL", () => {
         Evaler.interpret();
         expect(Evaler.memory[1].call()).to.be.equal(2);
     });
+
 
 });

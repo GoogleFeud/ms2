@@ -21,8 +21,10 @@ export const enum OP_CODES {
     DEC,
     DEC_POP,
     ACCESS,
+    ACCESS_OPTIONAL,
     ACCESS_STR,
     ACCESS_ALIAS,
+    ACCESS_ALIAS_OPTIONAL,
     LET,
     LET_POP,
     ASSIGN,
@@ -234,7 +236,9 @@ export class Interpreter {
                 break;
             case OP_CODES.ACCESS: {
                 const item = stack.pop();
-                stack.push(item[code.readUInt16BE(offset)]);
+                let res = item[code.readUInt16BE(offset)];
+                if (typeof res === "function") res = res.bind(item);
+                stack.push(res);
                 offset += 2;
                 break;
             }
@@ -248,6 +252,29 @@ export class Interpreter {
             }
             case OP_CODES.ACCESS_ALIAS: {
                 const item = stack.pop();
+                let res = item[PropertyAlias[code.readUInt8(offset++) as 0]];
+                if (typeof res === "function") res = res.bind(item);
+                stack.push(res);
+                break;
+            }
+            case OP_CODES.ACCESS_OPTIONAL: {
+                const item = stack.pop();
+                if (item === undefined || item === null) {
+                    offset += 2;
+                    break;
+                }
+                let res = item[code.readUInt16BE(offset)];
+                if (typeof res === "function") res = res.bind(item);
+                stack.push(res);
+                offset += 2;
+                break;
+            }
+            case OP_CODES.ACCESS_ALIAS_OPTIONAL: {
+                const item = stack.pop();
+                if (item === undefined || item === null) {
+                    offset++;
+                    break;
+                }
                 let res = item[PropertyAlias[code.readUInt8(offset++) as 0]];
                 if (typeof res === "function") res = res.bind(item);
                 stack.push(res);

@@ -101,4 +101,50 @@ describe("PROPERTIES", () => {
         expect(Evaler.memory[0].name.something.call()).to.be.equal("Hidden");
     });
 
+    describe("Optional chaining", () => {
+
+        it("value.undefined.undefined", () => {
+            const [indexOfPerson, indexOfSecrets, indexOfLies] = addPropertyAlias("person", "secrets", "lies");
+            const Evaler = new Interpreter(Buffer.from([
+                0x0, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfPerson,
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfSecrets,
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfLies,
+                OP_CODES.END
+            ]));
+            Evaler.addGlobal({
+                person: {
+                    secrets: undefined
+                }
+            });
+            Evaler.interpret();
+            expect(Evaler.stack.pop()).to.be.equal(undefined);
+        });
+
+        
+        it("value.value.value", () => {
+            const [indexOfPerson, indexOfSecrets, indexOfLies] = addPropertyAlias("person", "secrets", "lies");
+            const Evaler = new Interpreter(Buffer.from([
+                0x0, 0x1,
+                OP_CODES.PUSH_VAR, 0x0, 0x0,
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfPerson,
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfSecrets,
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfLies,
+                OP_CODES.END
+            ]));
+            Evaler.addGlobal({
+                person: {
+                    secrets: {
+                        lies: 10
+                    }
+                }
+            });
+            Evaler.interpret();
+            expect(Evaler.stack.pop()).to.be.equal(10);
+        });
+
+
+    });
+
 });

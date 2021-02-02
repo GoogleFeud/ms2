@@ -3,7 +3,7 @@
 
 import {performance} from "perf_hooks";
 import { Interpreter, OP_CODES } from "../src/Interpreter";
-//@ts-expect-error For testing only
+//@/ts-expect-error For testing only
 import Sval from "sval";
 
 const sval = new Sval();
@@ -35,7 +35,6 @@ const Evaler = new Interpreter(Buffer.from([
 
 const time2 = performance.now();
 Evaler.interpret();
-Evaler.clear();
 
 console.log("(MS) For loop:", performance.now() - time2);
 
