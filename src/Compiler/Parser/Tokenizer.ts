@@ -25,7 +25,7 @@ export class Tokenizer {
     private inMultilineComment: boolean
     constructor(code: string) {
         this.stream = new InputStream(code);
-        this.keywords = ["if", "loop", "else", "export", "#", "let", "const"];
+        this.keywords = ["if", "loop", "else", "export", "#", "let", "const", "true", "false", "null"];
         this.operators = ["+", "-", "*", "/", "%", "=", "&", "|", "<", ">", "!"];
         this.punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":"];
         this.inMultilineComment = false;
@@ -120,7 +120,7 @@ export class Tokenizer {
         else if (isDigit(char)) return this.readNumber();
         else if (isIdStart(char)) return this.readIdent();
         else if (this.punctuation.includes(char)) return {type: TOKEN_TYPES.PUNC, value: this.stream.consume(), loc: this.stream.loc()};
-        else if (this.operators.includes(char)) return {type: TOKEN_TYPES.OP, value: this.stream.consume(), loc: this.stream.loc()};
+        else if (this.operators.includes(char)) return {type: TOKEN_TYPES.OP, value: this.readWhile((ch) => this.operators.includes(ch)), loc: this.stream.loc()};
         else this.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${char}`);
     }
 

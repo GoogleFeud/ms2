@@ -8,12 +8,14 @@ export interface Loc {
 
 export const enum ERROR_TYPES {
     SYNTAX,
-    TYPE
+    TYPE,
+    REFERECE
 }
 
 const _typeToString = {
     0: "SyntaxError",
-    1: "TypeError"
+    1: "TypeError",
+    2: "ReferenceError"
 };
 
 export class InputStream {
