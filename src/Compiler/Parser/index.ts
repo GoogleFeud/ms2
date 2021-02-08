@@ -2,7 +2,8 @@
 import { ERROR_TYPES } from "./InputStream";
 import {Tokenizer, TOKEN_TYPES} from "./Tokenizer";
 
-import DefaultElementParsers from "./default_parsers";
+import ExpressionParsers from "./ElementParsers/expressions";
+import StatementParsers from "./ElementParsers/statements";
 
 export const enum AST_TYPES {
     STRING,
@@ -86,7 +87,9 @@ export interface AST_If {
 }
 
 export type ElementParser = (parser: Parser) => AST_Node|undefined;
-export const ElementParsers: Record<string|number, ElementParser> = DefaultElementParsers; 
+
+export const ExpressionElementParsers: Record<string|number, ElementParser> = ExpressionParsers;
+export const StatementElementParsers: Record<string|number, ElementParser> = StatementParsers; 
 
 export const OperatorPrecedence: Record<string, number> = {
     "=": 1,
@@ -96,9 +99,6 @@ export const OperatorPrecedence: Record<string, number> = {
     "+": 10, "-": 10,
     "*": 20, "/": 20, "%": 20,
 }; 
-
-export const Statements: Array<string> = ["const", "let", "loop", "export", "#"];
-
 
 export class Parser {
     tokens: Tokenizer
@@ -116,7 +116,7 @@ export class Parser {
 
     private maybeCall(fn: () => AST_Node|undefined) : AST_Node|undefined {
         const res = fn();
-        return this._isOfType(TOKEN_TYPES.PUNC, "(") ? ElementParsers["call"](this) : res;
+        return this._isOfType(TOKEN_TYPES.PUNC, "(") ? ExpressionElementParsers["call"](this) : res;
     }
 
     private maybeBinary(left: AST_Node|undefined, prec = 0) : AST_Node|undefined {
@@ -154,9 +154,10 @@ export class Parser {
                 }
             }
             if (token.type === TOKEN_TYPES.STRING || token.type === TOKEN_TYPES.NUMBER || token.type === TOKEN_TYPES.ID) return this.tokens.consume() as unknown as AST_String;
-            if (ElementParsers[token.value]) return ElementParsers[token.value](this);
+            if (ExpressionElementParsers[token.value]) return ExpressionElementParsers[token.value](this);
             else {
-                this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
+                if (StatementParsers[token.value]) this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected ${token.value} statement. An expression was expected.`);
+                else this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
                 this.tokens.consume();
             }
         });
@@ -170,7 +171,7 @@ export class Parser {
 
     parseStatement() : AST_Node|undefined {
         const token = this.tokens.peek();
-        if (token && token.type === TOKEN_TYPES.KEYWORD && Statements.includes(token.value as string)) return ElementParsers[token.value as string](this);
+        if (token && token.type === TOKEN_TYPES.KEYWORD && StatementParsers[token.value]) return StatementParsers[token.value](this);
     }
 
     parse() : AST_Block {

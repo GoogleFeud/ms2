@@ -9,7 +9,7 @@ meta name2 3.14;
 meta name3 false;
 meta name4 null;
 let a, b, c, d, = 5 + (1 + 6)
-const e = "Hello!"
+const e = !"Hello!";
 `);
 
 const res = parser.parse();

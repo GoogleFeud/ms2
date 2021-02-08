@@ -1,8 +1,8 @@
 
-import { AST_Define, AST_Node, AST_TYPES, ElementParser } from ".";
+import { AST_Define, AST_Node, AST_TYPES, ElementParser } from "../";
 
-import { ERROR_TYPES } from "./InputStream";
-import { Token, TOKEN_TYPES } from "./Tokenizer";
+import { ERROR_TYPES } from "../InputStream";
+import { Token, TOKEN_TYPES } from "../Tokenizer";
 
 
 
@@ -66,16 +66,5 @@ DefaultElementParsers["meta"] = (parser) => {
     }
 };
 
-DefaultElementParsers["true"] = () => {
-    return {type: AST_TYPES.BOOL, value: true};
-};
-
-DefaultElementParsers["false"] = () => {
-    return {type: AST_TYPES.BOOL, value: false};
-};
-
-DefaultElementParsers["null"] = () => {
-    return {type: AST_TYPES.NULL};
-};
 
 export default DefaultElementParsers;
