@@ -1,11 +1,5 @@
 
 
-export interface Loc {
-    pos: number,
-    line: number,
-    col: number
-}
-
 export const enum ERROR_TYPES {
     SYNTAX,
     TYPE,
@@ -45,14 +39,6 @@ export class InputStream {
 
     isEOF() : boolean {
         return this.code.charAt(this.pos) === "";
-    }
-
-    loc() : Loc {
-        return {
-            pos: this.pos,
-            line: this.line,
-            col: this.col
-        };
     }
 
     error(type: ERROR_TYPES, msg: string) : void {

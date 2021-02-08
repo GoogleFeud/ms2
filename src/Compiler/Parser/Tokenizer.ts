@@ -1,33 +1,30 @@
 
-import {InputStream, ERROR_TYPES, Loc} from "./InputStream";
+import {InputStream, ERROR_TYPES} from "./InputStream";
 
 export const enum TOKEN_TYPES {
     STRING,
     NUMBER,
-    KEYWORD,
-    PUNC,
+    ID,
     OP,
-    ID
+    KEYWORD,
+    PUNC
 }
 
 export interface Token {
     type: TOKEN_TYPES,
-    value: string|number,
-    loc: Loc
+    value: string|number
 }
+
+export const keywords = ["if", "loop", "else", "export", "#", "let", "const", "true", "false", "null"];
+export const operators = ["+", "-", "*", "/", "%", "=", "&", "|", "<", ">", "!"];
+export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":"];
 
 export class Tokenizer {
     stream: InputStream
-    keywords: Array<string>
-    operators: Array<string>
-    punctuation: Array<string>
     current?: Token
     private inMultilineComment: boolean
     constructor(code: string) {
         this.stream = new InputStream(code);
-        this.keywords = ["if", "loop", "else", "export", "#", "let", "const", "true", "false", "null"];
-        this.operators = ["+", "-", "*", "/", "%", "=", "&", "|", "<", ">", "!"];
-        this.punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":"];
         this.inMultilineComment = false;
     }
 
@@ -66,17 +63,15 @@ export class Tokenizer {
         }
         return {
             type: TOKEN_TYPES.NUMBER,
-            value: parseFloat(num),
-            loc: this.stream.loc()
+            value: parseFloat(num)
         };
     }
 
     readIdent() : Token {
         const id = this.readWhile(isId);
         return {
-            type: this.keywords.includes(id) ? TOKEN_TYPES.KEYWORD:TOKEN_TYPES.ID,
-            value: id,
-            loc: this.stream.loc()
+            type: keywords.includes(id) ? TOKEN_TYPES.KEYWORD:TOKEN_TYPES.ID,
+            value: id
         };
     }
 
@@ -94,7 +89,7 @@ export class Tokenizer {
             else if (ch === "\"") break;
             else str += ch;
         }
-        return {type: TOKEN_TYPES.STRING, value: str, loc: this.stream.loc()};
+        return {type: TOKEN_TYPES.STRING, value: str};
     }
 
     processNext() : Token|undefined {
@@ -119,8 +114,8 @@ export class Tokenizer {
         else if (char === "\"") return this.readString();
         else if (isDigit(char)) return this.readNumber();
         else if (isIdStart(char)) return this.readIdent();
-        else if (this.punctuation.includes(char)) return {type: TOKEN_TYPES.PUNC, value: this.stream.consume(), loc: this.stream.loc()};
-        else if (this.operators.includes(char)) return {type: TOKEN_TYPES.OP, value: this.readWhile((ch) => this.operators.includes(ch)), loc: this.stream.loc()};
+        else if (punctuation.includes(char)) return {type: TOKEN_TYPES.PUNC, value: this.stream.consume()};
+        else if (operators.includes(char)) return {type: TOKEN_TYPES.OP, value: this.readWhile((ch) => operators.includes(ch))};
         else this.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${char}`);
     }
 
