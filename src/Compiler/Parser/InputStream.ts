@@ -41,8 +41,9 @@ export class InputStream {
         return this.code.charAt(this.pos) === "";
     }
 
-    error(type: ERROR_TYPES, msg: string) : void {
+    error(type: ERROR_TYPES, msg: string) : undefined {
         this.errors.push(`${_typeToString[type]}: ${msg} (${this.line}:${this.col})`);
+        return undefined;
     }
 
 }

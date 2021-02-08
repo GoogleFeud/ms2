@@ -3,7 +3,8 @@ import {Parser} from "./Compiler/Parser";
 
 const parser = new Parser(`
 // This is a comment
-1 + 4;
+let a, b, c, d, = 5 + (1 + 6)
+const e = "Hello!"
 `);
 
-console.log(parser.parse());
+console.dir(parser.parse(), {depth: 5});
