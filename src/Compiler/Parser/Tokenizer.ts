@@ -15,7 +15,7 @@ export interface Token {
     value: string|number
 }
 
-export const keywords = ["if", "loop", "else", "export", "#", "let", "const", "true", "false", "null"];
+export const keywords = ["if", "loop", "else", "export", "meta", "let", "const", "true", "false", "null"];
 export const operators = ["+", "-", "*", "/", "%", "=", "&", "|", "<", ">", "!"];
 export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":"];
 

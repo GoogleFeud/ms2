@@ -103,9 +103,11 @@ export const Statements: Array<string> = ["const", "let", "loop", "export", "#"]
 export class Parser {
     tokens: Tokenizer
     code: string
+    meta: Record<string, string|number|boolean|undefined>
     constructor(code: string) {
         this.tokens = new Tokenizer(code);
         this.code = code;
+        this.meta = {};
     }
 
     reuse() : void {
@@ -139,14 +141,24 @@ export class Parser {
         return this.maybeCall(() => {
             const token = this.tokens.peek();
             if (!token) return;
-            if (token.type === TOKEN_TYPES.PUNC && token.value === "(") {
-                this.tokens.consume();
-                const exp = this.parseExpression();
-                this._expectToken(TOKEN_TYPES.PUNC, ")", undefined, true);
-                return exp;
+            if (token.type === TOKEN_TYPES.PUNC) {
+                if (token.value === ";") {
+                    this.tokens.consume();
+                    return;
+                }
+                if (token.value === "(") {
+                    this.tokens.consume();
+                    const exp = this.parseExpression();
+                    this._expectToken(TOKEN_TYPES.PUNC, ")", undefined, true);
+                    return exp;
+                }
             }
             if (token.type === TOKEN_TYPES.STRING || token.type === TOKEN_TYPES.NUMBER || token.type === TOKEN_TYPES.ID) return this.tokens.consume() as unknown as AST_String;
             if (ElementParsers[token.value]) return ElementParsers[token.value](this);
+            else {
+                this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
+                this.tokens.consume();
+            }
         });
     }
 
@@ -165,7 +177,7 @@ export class Parser {
         const res = [];
         while (!this.tokens.isEOF()) {
             const exp = this.parseStatement() || this.parseExpression();
-            if (!exp) break;
+            if (!exp) continue;
             res.push(exp);
             if (this._isOfType(TOKEN_TYPES.PUNC, ";")) this.tokens.consume();
         }
@@ -174,7 +186,7 @@ export class Parser {
 
     _expectToken(type: TOKEN_TYPES, val?: string, error?: string, consume = false) : void {
         const token = consume ? this.tokens.consume():this.tokens.peek();
-        if (token && token.type === type && (!val || val === token.value)) this.tokens.stream.error(ERROR_TYPES.SYNTAX, error || `Expected ${val}`);
+        if (!token || token.type !== type && (!val || val !== token.value)) this.tokens.stream.error(ERROR_TYPES.SYNTAX, error || `Expected ${val}`);
     }
 
     _isOfType(type: TOKEN_TYPES, val?: string) : boolean|undefined {
