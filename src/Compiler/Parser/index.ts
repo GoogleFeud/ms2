@@ -1,5 +1,5 @@
 
-import { ERROR_TYPES } from "./InputStream";
+import { ERROR_TYPES, InputStream, MSError } from "./InputStream";
 import {Token, Tokenizer, TOKEN_TYPES} from "./Tokenizer";
 
 import ExpressionParsers from "./ElementParsers/expressions";
@@ -103,8 +103,7 @@ export const OperatorPrecedence: Record<string, number> = {
 }; 
 
 export interface ParserOptions {
-    prettyPrint?: boolean,
-    stopOnFirstError?: boolean
+    onError?: (err: MSError, steam: InputStream) => void | undefined;
 }
 
 export const enum PARSER_CONTEXT {
@@ -121,6 +120,7 @@ export class Parser {
     meta: Record<string, string|number|boolean|undefined>
     settings: ParserOptions
     ctx: PARSER_CONTEXT
+    stopped?: boolean
     constructor(code: string, settings: ParserOptions = {}) {
         this.settings = settings;
         this.tokens = new Tokenizer(code, settings);
@@ -131,6 +131,8 @@ export class Parser {
 
     reuse() : void {
         this.tokens.reuse(this.code);
+        this.stopped = false;
+        this.ctx = PARSER_CONTEXT.NONE;
     }
 
     private maybeBinary(left: AST_Node|undefined, prec = 0) : AST_Node|undefined {
@@ -187,9 +189,9 @@ export class Parser {
     parse() : AST_Block {
         const res = [];
         while (!this.tokens.isEOF()) {
+            if (this.stopped) return res;
             const exp = this.parseStatement() || this.parseExpression();
             if (!exp) {
-                if (this.settings.stopOnFirstError) return res;
                 this.tokens.consume();
                 continue;
             } 

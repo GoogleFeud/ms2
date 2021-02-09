@@ -6,14 +6,16 @@ export const enum ERROR_TYPES {
     REFERECE
 }
 
-const _typeToString = {
-    0: "SyntaxError",
-    1: "TypeError",
-    2: "ReferenceError"
-};
 
 export interface InputStreamSettings {
-    prettyPrint?: boolean
+    onError?: (err: MSError, stream: InputStream) => void
+}
+
+export interface MSError {
+    type: number,
+    message: string,
+    line: number,
+    col: number
 }
 
 export class InputStream {
@@ -21,7 +23,7 @@ export class InputStream {
     pos: number
     line: number
     col: number
-    errors: Array<string>
+    errors: Array<MSError>
     settings: InputStreamSettings
     constructor(code: string, settings: InputStreamSettings = {}) {
         this.settings = settings;
@@ -48,14 +50,9 @@ export class InputStream {
     }
 
     error(type: ERROR_TYPES, msg: string) : undefined {
-        if (!this.settings.prettyPrint) {
-            this.errors.push(`${_typeToString[type]}: ${msg} (${this.line}:${this.col})`);
-            return undefined;
-        }
-        let col = "";
-        for (let i=0; i < this.col - 1; i++) col += " ";
-        col += "^";
-        this.errors.push(`${this.code.split("\n")[this.line - 1]}\n\n${col}\n${_typeToString[type]}: ${msg} (line ${this.line}, col ${this.col})`);
+        const err: MSError = {type, message: msg, line: this.line, col: this.col};
+        if (this.settings.onError) this.settings.onError(err, this);
+        this.errors.push(err);
         return undefined;
     }
 
