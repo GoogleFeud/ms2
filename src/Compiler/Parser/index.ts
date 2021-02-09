@@ -19,10 +19,11 @@ export const enum AST_TYPES {
     DEFINE,
     CONST,
     ASSIGN,
-    LOOP
+    LOOP,
+    FN
 }
 
-export type AST_Node = AST_String|AST_Number|AST_Boolean|AST_Null|AST_Array|AST_Object|AST_Binary|AST_Not|AST_If|SkipParse;
+export type AST_Node = AST_String|AST_Number|AST_Boolean|AST_Null|AST_Array|AST_Object|AST_Binary|AST_Not|AST_If|AST_Fn|AST_Block|SkipParse;
 
 export type AST_Block = Array<AST_Node>;
 
@@ -86,9 +87,15 @@ export interface AST_If {
     else?: AST_Block
 }
 
+export interface AST_Fn {
+    type: AST_TYPES,
+    params: Array<string>,
+    body: AST_Node
+}
+
 export type SkipParse = 1;
 
-export type ElementParser = (parser: Parser, token: Token) => AST_Node|SkipParse|undefined;
+export type ElementParser = (parser: Parser, token: Token, args?: any) => AST_Node|SkipParse|undefined;
 
 export const ExpressionElementParsers: Record<string|number, ElementParser> = ExpressionParsers;
 export const StatementElementParsers: Record<string|number, ElementParser> = StatementParsers; 
@@ -103,7 +110,8 @@ export const OperatorPrecedence: Record<string, number> = {
 }; 
 
 export interface ParserOptions {
-    onError?: (err: MSError, steam: InputStream) => void | undefined;
+    onError?: (err: MSError, steam: InputStream) => void | undefined,
+    stopAfterFirstError?: boolean
 }
 
 export const enum PARSER_CONTEXT {
@@ -153,8 +161,7 @@ export class Parser {
         }
     }
 
-    parseAtom() : AST_Node|SkipParse|undefined {
-        const token = this.tokens.peek();
+    parseAtom(token = this.tokens.peek()) : AST_Node|SkipParse|undefined {
         if (!token) return;
         if (token.type === TOKEN_TYPES.PUNC) {
             if (token.value === ";") {
@@ -163,8 +170,30 @@ export class Parser {
             }
             if (token.value === "(") {
                 this.tokens.consume();
+                if (this._isOfType(TOKEN_TYPES.PUNC, ")")) { // Function with no params
+                    this.tokens.consume();
+                    if (this._isOfType(TOKEN_TYPES.OP, "=>")) return ExpressionElementParsers["fn"](this, token, {skippedParan: true, params: []});
+                    return 1;
+                } 
+                else if (this._isOfType(TOKEN_TYPES.ID)) {
+                    const id = this.tokens.consume();
+                    if (!id) return;
+                    if (this._isOfType(TOKEN_TYPES.PUNC, ")")) { // Function with 1 param
+                        this.tokens.consume();
+                        if (this._isOfType(TOKEN_TYPES.OP, "=>")) return ExpressionElementParsers["fn"](this, token, {skippedParan: true, params: [id]});
+                        return ExpressionElementParsers[id.type](this, id, true);
+                    } else if (this._isOfType(TOKEN_TYPES.PUNC, ",")) { // Function with more than 1 param
+                        this.tokens.consume();
+                        return ExpressionElementParsers["fn"](this, token, {params: [id]});
+                    }
+                    else {
+                        const res = this.parseExpression(id as unknown as AST_Id);
+                        this._expectToken(TOKEN_TYPES.PUNC, ")");
+                        return res;
+                    }
+                }
                 const exp = this.parseExpression();
-                this._expectToken(TOKEN_TYPES.PUNC, ")", undefined, true);
+                this._expectToken(TOKEN_TYPES.PUNC, ")");
                 return exp;
             }
         }
@@ -177,8 +206,8 @@ export class Parser {
         }
     }
 
-    parseExpression() : AST_Node|SkipParse|undefined {
-        return this.maybeBinary(this.parseAtom());
+    parseExpression(token?: AST_Node) : AST_Node|SkipParse|undefined {
+        return this.maybeBinary(token || this.parseAtom());
     }
 
     parseStatement() : AST_Node|SkipParse|undefined {
@@ -188,10 +217,10 @@ export class Parser {
 
     parse() : AST_Block {
         const res = [];
-        while (!this.tokens.isEOF()) {
-            if (this.stopped) return res;
+        while (!this.tokens.isEOF() && !this.stopped) {
             const exp = this.parseStatement() || this.parseExpression();
             if (!exp) {
+                if (this.settings.stopAfterFirstError) return res;
                 this.tokens.consume();
                 continue;
             } 
@@ -201,13 +230,11 @@ export class Parser {
         return res as AST_Block;
     }
 
-    _expectToken(type: TOKEN_TYPES, val?: string, error?: string, consume = false) : boolean {
+    _expectToken(type: TOKEN_TYPES, val?: string, consume = true, error?: string) : boolean {
         const token = consume ? this.tokens.consume():this.tokens.peek();
-        if (!token || token.type !== type && (!val || val !== token.value)) {
-            this.tokens.stream.error(ERROR_TYPES.SYNTAX, error || `Expected ${val}`);
-            return false;
-        }
-        return true;
+        if (token && token.type === type && (!val || token.value === val)) return true;
+        this.tokens.stream.error(ERROR_TYPES.SYNTAX, error || `Expected ${val}, found ${token?.value || "nothing"}`);
+        return false;
     }
 
     _isOfType(type: TOKEN_TYPES, val?: string) : boolean|undefined {

@@ -46,7 +46,7 @@ DefaultElementParsers["meta"] = (parser) => {
     parser.tokens.consume(); // skips meta
     const name = parser.tokens.consume() || {value: "", type: -1};
     if (!name || name.type !== TOKEN_TYPES.ID) parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Invalid meta name");
-    if (!parser._expectToken(TOKEN_TYPES.OP, "=", undefined, true)) return;
+    if (!parser._expectToken(TOKEN_TYPES.OP, "=")) return;
     const value = parser.tokens.consume();
     if (!value) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Value of meta tag is required");
     switch (value.type) {

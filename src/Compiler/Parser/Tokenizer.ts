@@ -125,6 +125,10 @@ export class Tokenizer {
         return this.current || (this.current = this.processNext());
     }
 
+    pop(token?: Token) : void {
+        this.current = token;
+    } 
+
     consume() : Token|undefined {
         const token = this.current;
         delete this.current;
