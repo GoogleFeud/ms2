@@ -1,6 +1,6 @@
 
 import { ERROR_TYPES } from "./InputStream";
-import {Tokenizer, TOKEN_TYPES} from "./Tokenizer";
+import {Token, Tokenizer, TOKEN_TYPES} from "./Tokenizer";
 
 import ExpressionParsers from "./ElementParsers/expressions";
 import StatementParsers from "./ElementParsers/statements";
@@ -88,7 +88,7 @@ export interface AST_If {
 
 export type SkipParse = 1;
 
-export type ElementParser = (parser: Parser) => AST_Node|SkipParse|undefined;
+export type ElementParser = (parser: Parser, token: Token) => AST_Node|SkipParse|undefined;
 
 export const ExpressionElementParsers: Record<string|number, ElementParser> = ExpressionParsers;
 export const StatementElementParsers: Record<string|number, ElementParser> = StatementParsers; 
@@ -107,25 +107,30 @@ export interface ParserOptions {
     stopOnFirstError?: boolean
 }
 
+export const enum PARSER_CONTEXT {
+    NONE,
+    IF,
+    LOOP,
+    DECLARATION,
+    ASSIGNMENT
+}
+
 export class Parser {
     tokens: Tokenizer
     code: string
     meta: Record<string, string|number|boolean|undefined>
     settings: ParserOptions
+    ctx: PARSER_CONTEXT
     constructor(code: string, settings: ParserOptions = {}) {
         this.settings = settings;
         this.tokens = new Tokenizer(code, settings);
         this.code = code;
         this.meta = {};
+        this.ctx = PARSER_CONTEXT.NONE;
     }
 
     reuse() : void {
         this.tokens.reuse(this.code);
-    }
-
-    private maybeCall(fn: () => AST_Node|SkipParse|undefined) : AST_Node|SkipParse|undefined {
-        const res = fn();
-        return this._isOfType(TOKEN_TYPES.PUNC, "(") ? ExpressionElementParsers["call"](this) : res;
     }
 
     private maybeBinary(left: AST_Node|undefined, prec = 0) : AST_Node|undefined {
@@ -147,39 +152,36 @@ export class Parser {
     }
 
     parseAtom() : AST_Node|SkipParse|undefined {
-        return this.maybeCall(() => {
-            const token = this.tokens.peek();
-            if (!token) return;
-            if (token.type === TOKEN_TYPES.PUNC) {
-                if (token.value === ";") {
-                    this.tokens.consume();
-                    return;
-                }
-                if (token.value === "(") {
-                    this.tokens.consume();
-                    const exp = this.parseExpression();
-                    this._expectToken(TOKEN_TYPES.PUNC, ")", undefined, true);
-                    return exp;
-                }
+        const token = this.tokens.peek();
+        if (!token) return;
+        if (token.type === TOKEN_TYPES.PUNC) {
+            if (token.value === ";") {
+                this.tokens.consume();
+                return;
             }
-            if (token.type === TOKEN_TYPES.STRING || token.type === TOKEN_TYPES.NUMBER || token.type === TOKEN_TYPES.ID) return this.tokens.consume() as unknown as AST_String;
-            if (ExpressionElementParsers[token.value]) return ExpressionElementParsers[token.value](this);
-            else {
-                if (StatementParsers[token.value]) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected ${token.value} statement. An expression was expected.`);
-                this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
+            if (token.value === "(") {
+                this.tokens.consume();
+                const exp = this.parseExpression();
+                this._expectToken(TOKEN_TYPES.PUNC, ")", undefined, true);
+                return exp;
             }
-        });
+        }
+        if (token.type === TOKEN_TYPES.STRING || token.type === TOKEN_TYPES.NUMBER) return this.tokens.consume() as unknown as AST_String;
+        if (ExpressionElementParsers[token.value]) return ExpressionElementParsers[token.value](this, token);
+        else if (ExpressionElementParsers[token.type]) return ExpressionElementParsers[token.type](this, token);
+        else {
+            if (StatementParsers[token.value]) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected ${token.value} statement. An expression was expected.`);
+            this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
+        }
     }
 
     parseExpression() : AST_Node|SkipParse|undefined {
-        return this.maybeCall(() => {
-            return this.maybeBinary(this.parseAtom());
-        });
+        return this.maybeBinary(this.parseAtom());
     }
 
     parseStatement() : AST_Node|SkipParse|undefined {
         const token = this.tokens.peek();
-        if (token && token.type === TOKEN_TYPES.KEYWORD && StatementParsers[token.value]) return StatementParsers[token.value](this);
+        if (token && token.type === TOKEN_TYPES.KEYWORD && StatementParsers[token.value]) return StatementParsers[token.value](this, token);
     }
 
     parse() : AST_Block {

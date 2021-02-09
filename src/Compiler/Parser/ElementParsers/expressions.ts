@@ -1,7 +1,8 @@
 
-import { AST_TYPES, ElementParser } from "../";
+import { AST_Id, AST_TYPES, ElementParser } from "../";
 
 import { ERROR_TYPES } from "../InputStream";
+import { TOKEN_TYPES } from "../Tokenizer";
 
 const DefaultElementParsers: Record<string|number, ElementParser> = {};
 
@@ -22,6 +23,10 @@ DefaultElementParsers["false"] = () => {
 
 DefaultElementParsers["null"] = () => {
     return {type: AST_TYPES.NULL};
+};
+
+DefaultElementParsers[TOKEN_TYPES.ID] = (parser, token) => {
+    return token as unknown as AST_Id;
 };
 
 export default DefaultElementParsers;

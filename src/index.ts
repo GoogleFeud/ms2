@@ -3,7 +3,7 @@ import {Parser} from "./Compiler/Parser";
 
 const t = performance.now();
 const parser = new Parser(`
-meta "HEllo!" = 44;
+meta a = 50 + 1;
 `, {prettyPrint: true});
 
 const res = parser.parse();

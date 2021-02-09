@@ -16,7 +16,6 @@ export interface InputStreamSettings {
     prettyPrint?: boolean
 }
 
-
 export class InputStream {
     code: string
     pos: number
@@ -53,11 +52,10 @@ export class InputStream {
             this.errors.push(`${_typeToString[type]}: ${msg} (${this.line}:${this.col})`);
             return undefined;
         }
-        const line = this.code.split("\n")[this.line - 1];
         let col = "";
         for (let i=0; i < this.col - 1; i++) col += " ";
         col += "^";
-        this.errors.push(`${line}\n\n${col}\n${_typeToString[type]}: ${msg} (${this.line}:${this.col})`);
+        this.errors.push(`${this.code.split("\n")[this.line - 1]}\n\n${col}\n${_typeToString[type]}: ${msg} (line ${this.line}, col ${this.col})`);
         return undefined;
     }
 
