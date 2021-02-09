@@ -43,9 +43,10 @@ DefaultElementParsers["const"] = (parser) => {
 };
 
 DefaultElementParsers["meta"] = (parser) => {
-    parser.tokens.consume(); // skips # 
-    const name = parser.tokens.consume();
-    if (!name || name.type !== TOKEN_TYPES.ID) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Invalid meta name");
+    parser.tokens.consume(); // skips meta
+    const name = parser.tokens.consume() || {value: "", type: -1};
+    if (!name || name.type !== TOKEN_TYPES.ID) parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Invalid meta name");
+    if (!parser._expectToken(TOKEN_TYPES.OP, "=", undefined, true)) return;
     const value = parser.tokens.consume();
     if (!value) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Value of meta tag is required");
     switch (value.type) {
@@ -64,6 +65,7 @@ DefaultElementParsers["meta"] = (parser) => {
     default: 
         parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Meta value must be a string, a number, a boolean or null");
     }
+    return 1;
 };
 
 

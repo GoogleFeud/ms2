@@ -12,13 +12,20 @@ const _typeToString = {
     2: "ReferenceError"
 };
 
+export interface InputStreamSettings {
+    prettyPrint?: boolean
+}
+
+
 export class InputStream {
     code: string
     pos: number
     line: number
     col: number
     errors: Array<string>
-    constructor(code: string) {
+    settings: InputStreamSettings
+    constructor(code: string, settings: InputStreamSettings = {}) {
+        this.settings = settings;
         this.code = code;
         this.pos = 0;
         this.line = 1;
@@ -42,7 +49,15 @@ export class InputStream {
     }
 
     error(type: ERROR_TYPES, msg: string) : undefined {
-        this.errors.push(`${_typeToString[type]}: ${msg} (${this.line}:${this.col})`);
+        if (!this.settings.prettyPrint) {
+            this.errors.push(`${_typeToString[type]}: ${msg} (${this.line}:${this.col})`);
+            return undefined;
+        }
+        const line = this.code.split("\n")[this.line - 1];
+        let col = "";
+        for (let i=0; i < this.col - 1; i++) col += " ";
+        col += "^";
+        this.errors.push(`${line}\n\n${col}\n${_typeToString[type]}: ${msg} (${this.line}:${this.col})`);
         return undefined;
     }
 

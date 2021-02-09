@@ -1,5 +1,5 @@
 
-import {InputStream, ERROR_TYPES} from "./InputStream";
+import {InputStream, ERROR_TYPES, InputStreamSettings} from "./InputStream";
 
 export const enum TOKEN_TYPES {
     STRING,
@@ -23,13 +23,15 @@ export class Tokenizer {
     stream: InputStream
     current?: Token
     private inMultilineComment: boolean
-    constructor(code: string) {
-        this.stream = new InputStream(code);
+    settings?: InputStreamSettings
+    constructor(code: string, settings?: InputStreamSettings) {
+        this.stream = new InputStream(code, settings);
+        this.settings = settings;
         this.inMultilineComment = false;
     }
 
     reuse(code: string) : void {
-        this.stream = new InputStream(code);
+        this.stream = new InputStream(code, this.settings);
         this.inMultilineComment = false;
         delete this.current;
     } 
