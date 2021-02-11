@@ -1,5 +1,5 @@
 
-import { AST_Id, AST_TYPES, ElementParser } from "../";
+import { AST_Id, AST_Node, AST_TYPES, ElementParser } from "../";
 
 import { ERROR_TYPES } from "../InputStream";
 import { Token, TOKEN_TYPES } from "../Tokenizer";
@@ -50,6 +50,51 @@ DefaultElementParsers["null"] = () => {
 
 DefaultElementParsers[TOKEN_TYPES.ID] = (parser, token, hasBeenConsumed) => {
     return (hasBeenConsumed ? token:parser.tokens.consume()) as unknown as AST_Id;
+};
+
+DefaultElementParsers["access"] = (parser, _, start) => {
+    const path: Array<AST_Node> = [];
+    let token = parser.tokens.peek();
+    while(token && token.type === TOKEN_TYPES.PUNC && (token.value === "." || token.value === "[" || token.value === "(") ) {
+        switch(token.value) {
+        case ".":
+            parser.tokens.consume();
+            if (!parser._expectToken(TOKEN_TYPES.ID, undefined, false, "Expected property identifier in dot access notation")) return;
+            path.push(parser.tokens.consume() as unknown as AST_Id);
+            break;
+        case "[": {
+            parser.tokens.consume();
+            const exp = parser.parseExpression();
+            if (!exp || exp === 1) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected expression inside bracket access notation");
+            path.push(exp);
+            if (!parser._expectToken(TOKEN_TYPES.PUNC, "]", true, "Missing closing bracket in bracket notation")) return;
+            break;
+        }
+        case "(": {
+            // The call parser consumes the ( token and the ) token
+            const exp = DefaultElementParsers["call"](parser, token);
+            if (!exp || exp === 1) return;
+            path.push(exp);
+        }
+        }
+        token = parser.tokens.peek();
+    }
+    return {
+        type: AST_TYPES.ACCESS,
+        start,
+        path
+    };
+};
+
+
+DefaultElementParsers["call"] = (parser, token, left) => {
+    parser.tokens.consume(); // Skip (
+    if (!parser._expectToken(TOKEN_TYPES.PUNC, ")", true, "Missing closing paranthesis in function call")) return;
+    return {
+        fn: left,
+        type: AST_TYPES.CALL,
+        params: []
+    };
 };
 
 export default DefaultElementParsers;

@@ -17,7 +17,7 @@ export interface Token {
 
 export const keywords = ["if", "loop", "else", "export", "meta", "let", "const", "true", "false", "null"];
 export const operators = ["+", "-", "*", "/", "%", "=", "&", "|", "<", ">", "!"];
-export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":"];
+export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":", "."];
 
 export class Tokenizer {
     stream: InputStream

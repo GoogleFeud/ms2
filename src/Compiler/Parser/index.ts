@@ -19,13 +19,19 @@ export const enum AST_TYPES {
     DEFINE,
     CONST,
     ASSIGN,
+    ACCESS,
+    CALL,
     LOOP,
+    BLOCK,
     FN
 }
 
-export type AST_Node = AST_String|AST_Number|AST_Boolean|AST_Null|AST_Array|AST_Object|AST_Binary|AST_Not|AST_If|AST_Fn|AST_Block|SkipParse;
+export type AST_Node = AST_String|AST_Number|AST_Boolean|AST_Null|AST_Array|AST_Object|AST_Binary|AST_Not|AST_If|AST_Fn|AST_Block|AST_Access|AST_Call|SkipParse;
 
-export type AST_Block = Array<AST_Node>;
+export interface AST_Block {
+    type: AST_TYPES,
+    elements: Array<AST_Node>
+}
 
 export interface AST_String {
     type: AST_TYPES
@@ -91,6 +97,19 @@ export interface AST_Fn {
     type: AST_TYPES,
     params: Array<string>,
     body: AST_Node
+}
+
+export interface AST_Access {
+    type: AST_TYPES,
+    start: AST_Node,
+    path: Array<AST_Node>
+}
+
+
+export interface AST_Call {
+    type: AST_TYPES,
+    fn?: AST_Node,
+    params: Array<AST_Node>
 }
 
 export type SkipParse = 1;
@@ -161,49 +180,71 @@ export class Parser {
         }
     }
 
+    private parseAfterExp(ast: AST_Node|SkipParse|undefined) : AST_Node|SkipParse|undefined {
+        if (!ast || ast === 1) return ast;
+        const nextToken = this.tokens.peek();
+        if (nextToken && nextToken.type === TOKEN_TYPES.PUNC && (nextToken.value === "." || nextToken.value === "[" || nextToken.value === "(") ) {
+            switch(nextToken.value) {
+            case ".": {
+                return ExpressionElementParsers["access"](this, nextToken, ast);
+            }
+            case "[":
+                return ExpressionElementParsers["access"](this, nextToken, ast);
+            case "(":
+                return this.parseAfterExp(ExpressionElementParsers["call"](this, nextToken, ast));
+            default:
+                return ast;
+            }
+        }
+        return ast;
+    }
+
     parseAtom(token = this.tokens.peek()) : AST_Node|SkipParse|undefined {
-        if (!token) return;
-        if (token.type === TOKEN_TYPES.PUNC) {
-            if (token.value === ";") {
-                this.tokens.consume();
-                return;
-            }
-            if (token.value === "(") {
-                this.tokens.consume();
-                if (this._isOfType(TOKEN_TYPES.PUNC, ")")) { // Function with no params
+        const ast = (() => {
+            if (!token) return;
+            if (token.type === TOKEN_TYPES.PUNC) {
+                if (token.value === ";") {
                     this.tokens.consume();
-                    if (this._isOfType(TOKEN_TYPES.OP, "=>")) return ExpressionElementParsers["fn"](this, token, {skippedParan: true, params: []});
-                    return 1;
-                } 
-                else if (this._isOfType(TOKEN_TYPES.ID)) {
-                    const id = this.tokens.consume();
-                    if (!id) return;
-                    if (this._isOfType(TOKEN_TYPES.PUNC, ")")) { // Function with 1 param
-                        this.tokens.consume();
-                        if (this._isOfType(TOKEN_TYPES.OP, "=>")) return ExpressionElementParsers["fn"](this, token, {skippedParan: true, params: [id]});
-                        return ExpressionElementParsers[id.type](this, id, true);
-                    } else if (this._isOfType(TOKEN_TYPES.PUNC, ",")) { // Function with more than 1 param
-                        this.tokens.consume();
-                        return ExpressionElementParsers["fn"](this, token, {params: [id]});
-                    }
-                    else {
-                        const res = this.parseExpression(id as unknown as AST_Id);
-                        this._expectToken(TOKEN_TYPES.PUNC, ")");
-                        return res;
-                    }
+                    return;
                 }
-                const exp = this.parseExpression();
-                this._expectToken(TOKEN_TYPES.PUNC, ")");
-                return exp;
+                if (token.value === "(") {
+                    this.tokens.consume();
+                    if (this._isOfType(TOKEN_TYPES.PUNC, ")")) { // Function with no params
+                        this.tokens.consume();
+                        if (this._isOfType(TOKEN_TYPES.OP, "=>")) return ExpressionElementParsers["fn"](this, token, {skippedParan: true, params: []});
+                        return 1;
+                    } 
+                    else if (this._isOfType(TOKEN_TYPES.ID)) {
+                        const id = this.tokens.consume();
+                        if (!id) return;
+                        if (this._isOfType(TOKEN_TYPES.PUNC, ")")) { // Function with 1 param
+                            this.tokens.consume();
+                            if (this._isOfType(TOKEN_TYPES.OP, "=>")) return ExpressionElementParsers["fn"](this, token, {skippedParan: true, params: [id]});
+                            return ExpressionElementParsers[id.type](this, id, true);
+                        } else if (this._isOfType(TOKEN_TYPES.PUNC, ",")) { // Function with more than 1 param
+                            this.tokens.consume();
+                            return ExpressionElementParsers["fn"](this, token, {params: [id]});
+                        }
+                        else {
+                            const res = this.parseExpression(id as unknown as AST_Id);
+                            this._expectToken(TOKEN_TYPES.PUNC, ")");
+                            return res;
+                        }
+                    }
+                    const exp = this.parseExpression();
+                    this._expectToken(TOKEN_TYPES.PUNC, ")");
+                    return exp;
+                }
             }
-        }
-        if (token.type === TOKEN_TYPES.STRING || token.type === TOKEN_TYPES.NUMBER) return this.tokens.consume() as unknown as AST_String;
-        if (ExpressionElementParsers[token.value]) return ExpressionElementParsers[token.value](this, token);
-        else if (ExpressionElementParsers[token.type]) return ExpressionElementParsers[token.type](this, token);
-        else {
-            if (StatementParsers[token.value]) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected ${token.value} statement. An expression was expected.`);
-            this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
-        }
+            if (token.type === TOKEN_TYPES.STRING || token.type === TOKEN_TYPES.NUMBER) return this.tokens.consume() as unknown as AST_String;
+            if (ExpressionElementParsers[token.value]) return ExpressionElementParsers[token.value](this, token);
+            else if (ExpressionElementParsers[token.type]) return ExpressionElementParsers[token.type](this, token);
+            else {
+                if (StatementParsers[token.value]) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected ${token.value} statement. An expression was expected.`);
+                this.tokens.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
+            }
+        })();
+        return this.parseAfterExp(ast);
     }
 
     parseExpression(token?: AST_Node) : AST_Node|SkipParse|undefined {
@@ -215,7 +256,7 @@ export class Parser {
         if (token && token.type === TOKEN_TYPES.KEYWORD && StatementParsers[token.value]) return StatementParsers[token.value](this, token);
     }
 
-    parse() : AST_Block {
+    parse() : Array<AST_Node> {
         const res = [];
         while (!this.tokens.isEOF() && !this.stopped) {
             const exp = this.parseStatement() || this.parseExpression();
@@ -227,7 +268,7 @@ export class Parser {
             else if (exp !== 1) res.push(exp);
             if (this._isOfType(TOKEN_TYPES.PUNC, ";")) this.tokens.consume();
         }
-        return res as AST_Block;
+        return res;
     }
 
     _expectToken(type: TOKEN_TYPES, val?: string, consume = true, error?: string) : boolean {
