@@ -87,13 +87,19 @@ DefaultElementParsers["access"] = (parser, _, start) => {
 };
 
 
-DefaultElementParsers["call"] = (parser, token, left) => {
+DefaultElementParsers["call"] = (parser, _, left) => {
     parser.tokens.consume(); // Skip (
+    const params: Array<AST_Node> = [];
+    while (!parser._isOfType(TOKEN_TYPES.PUNC, ")")) {
+        params.push(parser.parseExpression() as unknown as AST_Node);
+        if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
+        else break;
+    }
     if (!parser._expectToken(TOKEN_TYPES.PUNC, ")", true, "Missing closing paranthesis in function call")) return;
     return {
         fn: left,
         type: AST_TYPES.CALL,
-        params: []
+        params
     };
 };
 

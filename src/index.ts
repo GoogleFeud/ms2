@@ -4,8 +4,7 @@ import { prettifyError } from "./util";
 
 const t = performance.now();
 const parser = new Parser(`
-//const something = ((a, b) => a + b + c / 2).a.b().c[d.e];
-const a = b();
+const a = b(1, 2, ((a, b) => a + b + c / 2).a.b().c[d.e]).a;
 `, {onError: (err, stream) => {
     console.log(prettifyError(err, stream));
 }});
