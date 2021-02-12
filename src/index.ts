@@ -1,3 +1,6 @@
 
+import {MS2Transpiler} from "./transpiler";
 
-console.log("HELLO WORLD!");
+const t = new MS2Transpiler();
+
+console.log(t.transpile("{ }"));
