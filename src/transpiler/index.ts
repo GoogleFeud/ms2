@@ -1,5 +1,6 @@
 
 import * as Esprima from "esprima";
+import { MS2TranspilerContext } from "./Context";
 import Walkers from "./walkers";
 
 export const defaultEsprimaSettings: Esprima.ParseOptions = {
@@ -10,7 +11,7 @@ export const defaultEsprimaSettings: Esprima.ParseOptions = {
     jsx: false
 }
 
-export type Walker = (el: any, ctx: string, transpiler: MS2Transpiler) => void;
+export type Walker = (el: any, ctx: MS2TranspilerContext) => void;
 export type WalkerCollection = Record<string, Walker>;
 
 export interface MS2TranspilerSettings {
@@ -33,10 +34,17 @@ export class MS2Transpiler {
         }catch(err) {
             return err;
         }
+        const ctx = new MS2TranspilerContext(this);
         for (const element of tree.body) {
-            Walkers[element.type](element, "", this);
+            const el = Walkers[element.type];
+            if (el) el(element, ctx);
         }
         return "";
+    }
+
+    _transpileNode(node: any, ctx: MS2TranspilerContext) : void {
+        const el = Walkers[node.type];
+        if (el) el(node, ctx);
     }
 
 
