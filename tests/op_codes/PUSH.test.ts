@@ -8,7 +8,6 @@ describe("PUSH", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x0,
             OP_CODES.PUSH_32, 0x40, 0x48, 0xf5, 0xc3, 
-            OP_CODES.END
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.approximately(3.14, 0.5);
@@ -18,7 +17,6 @@ describe("PUSH", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x0,
             OP_CODES.PUSH_16, 0x40, 0x48, 
-            OP_CODES.END
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.equal(16456);
@@ -28,7 +26,6 @@ describe("PUSH", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x0,
             OP_CODES.PUSH_8, 0x7f, 
-            OP_CODES.END
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.equal(127);
@@ -38,7 +35,6 @@ describe("PUSH", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x0,
             OP_CODES.PUSH_BOOL, 0x1, 
-            OP_CODES.END
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.equal(true);
@@ -49,7 +45,6 @@ describe("PUSH", () => {
             0x0, 0x0,
             OP_CODES.PUSH_STR, 0x0, 0xC,
             0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x21,
-            OP_CODES.END
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.equal("Hello world!");
@@ -63,7 +58,6 @@ describe("PUSH", () => {
             OP_CODES.PUSH_8, 0x45,
             OP_CODES.PUSH_BOOL, 0x0,
             OP_CODES.PUSH_ARR, 0x0, 0x3,
-            OP_CODES.END
         ]));
         Evaler.interpret();
         const arr = Evaler.stack.pop();

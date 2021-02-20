@@ -33,10 +33,7 @@ export const enum OP_CODES {
     ASSIGN_PROP_POP,
     ASSIGN_PROP_ALIAS,
     ASSIGN_PROP_ALIAS_POP,
-    FN_START,
-    FN_START_INNER,
-    FN_END,
-    FN_END_INNER,
+    FN,
     JUMP_TRUE,
     JUMP_FALSE,
     JUMP,
@@ -114,11 +111,11 @@ export class Interpreter {
      * @param endByte - Where to stop interpreting the code
      * @param endByteArg - An extra byte 
      */
-    interpret(offset = this.pausedAt, endByte = OP_CODES.END, endByteArg?: number) : number {
+    interpret(offset = this.pausedAt, endAt = this.code.byteLength, inFn?: boolean) : number {
         const code = this.code;
         const memory = this.memory;
         const stack = this.stack;
-        for(;;) {
+        for(; offset < endAt ;) {
             switch(code[offset++]) {
             case OP_CODES.PUSH_32:
                 stack.push(code.readFloatBE(offset));
@@ -322,18 +319,11 @@ export class Interpreter {
                 propParent[propToModify] = value;
                 break;
             }
-            case OP_CODES.FN_START: {
+            case OP_CODES.FN: {
                 const size = code.readUInt16BE(offset);
                 offset += 2;
-                stack.push(new MSFunction(offset, this));
-                offset += size + 1; // Account for the FN_END code
-                break;
-            }
-            case OP_CODES.FN_START_INNER: {
-                const id = code.readUInt8(offset);
-                const size = code.readUInt16BE(++offset);
-                stack.push(new MSFunction(offset += 2, this, id));
-                offset += size + 2; // Account for the FN_END_INNER code
+                stack.push(new MSFunction(offset, size, inFn, this));
+                offset += size;
                 break;
             }
             case OP_CODES.RETURN:
@@ -378,15 +368,13 @@ export class Interpreter {
             }
             case OP_CODES.BREAKPOINT: 
                 this.pausedAt = offset;
-                if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(this.pausedAt, endByte);
-                return offset;
-            case endByte:
-                if (endByteArg) return offset + 1;
+                if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(this.pausedAt, endAt);
                 return offset;
             default:
                 throw `Unknown OP code at byte ${offset}`;
             }
         }
+        return offset;
     }
 
 

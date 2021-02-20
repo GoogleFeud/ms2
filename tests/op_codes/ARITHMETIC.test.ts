@@ -10,8 +10,7 @@ describe("ARITHMETIC", () => {
                 0x0, 0x0,
                 OP_CODES.PUSH_8, 0x15,
                 OP_CODES.PUSH_8, 0xF,
-                OP_CODES.ADD, 
-                OP_CODES.END
+                OP_CODES.ADD
             ]));
             Evaler.interpret();
             expect(Evaler.stack.pop()).to.be.equal(36);
@@ -23,8 +22,7 @@ describe("ARITHMETIC", () => {
                 OP_CODES.PUSH_8, 0x15,
                 OP_CODES.PUSH_STR, 0x0, 0xC,
                 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x21,
-                OP_CODES.ADD, 
-                OP_CODES.END
+                OP_CODES.ADD,
             ]));
             Evaler.interpret();
             expect(Evaler.stack.pop()).to.be.equal("21Hello world!");
@@ -37,8 +35,7 @@ describe("ARITHMETIC", () => {
             0x0, 0x0,
             OP_CODES.PUSH_8, 0x15,
             OP_CODES.PUSH_8, 0xF,
-            OP_CODES.SUB, 
-            OP_CODES.END
+            OP_CODES.SUB
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.equal(6);
@@ -49,8 +46,7 @@ describe("ARITHMETIC", () => {
             0x0, 0x0,
             OP_CODES.PUSH_8, 0x2,
             OP_CODES.PUSH_8, 0xF,
-            OP_CODES.MUL, 
-            OP_CODES.END
+            OP_CODES.MUL
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.equal(30);
@@ -61,8 +57,7 @@ describe("ARITHMETIC", () => {
             0x0, 0x0,
             OP_CODES.PUSH_8, 0x10,
             OP_CODES.PUSH_8, 0x2,
-            OP_CODES.DIV, 
-            OP_CODES.END
+            OP_CODES.DIV
         ]));
         Evaler.interpret();
         expect(Evaler.stack.pop()).to.be.equal(8);
@@ -75,8 +70,7 @@ describe("ARITHMETIC", () => {
             OP_CODES.LET,
             OP_CODES.INC, 0x0, 0x0,
             OP_CODES.INC, 0x0, 0x0,
-            OP_CODES.INC, 0x0, 0x0,
-            OP_CODES.END
+            OP_CODES.INC, 0x0, 0x0
         ]));
         Evaler.interpret();
         expect(Evaler.memory[0]).to.be.equal(4);
@@ -89,8 +83,7 @@ describe("ARITHMETIC", () => {
             OP_CODES.LET,
             OP_CODES.DEC, 0x0, 0x0,
             OP_CODES.DEC, 0x0, 0x0,
-            OP_CODES.DEC, 0x0, 0x0,
-            OP_CODES.END
+            OP_CODES.DEC, 0x0, 0x0
         ]));
         Evaler.interpret();
         expect(Evaler.memory[0]).to.be.equal(-2);

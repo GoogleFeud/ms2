@@ -11,8 +11,7 @@ describe("PROPERTIES", () => {
             OP_CODES.PUSH_8, 0x1,
             OP_CODES.PUSH_8, 0x2,
             OP_CODES.PUSH_ARR, 0x0, 0x2,
-            OP_CODES.ACCESS, 0x0, 0x0,
-            OP_CODES.END
+            OP_CODES.ACCESS, 0x0, 0x0
         ]));
         
         Evaler.interpret();
@@ -28,7 +27,6 @@ describe("PROPERTIES", () => {
             OP_CODES.PUSH_ARR, 0x0, 0x1,
             OP_CODES.ACCESS, 0x0, 0x0,
             OP_CODES.ACCESS, 0x0, 0x1,
-            OP_CODES.END
         ]));
         Evaler.interpret();
         expect(Evaler.stack[0]).to.be.equal(2);
@@ -40,7 +38,6 @@ describe("PROPERTIES", () => {
             0x0, 0x1,
             OP_CODES.PUSH_VAR, 0x0, 0x0,
             OP_CODES.ACCESS_ALIAS, indexOfA,
-            OP_CODES.END
         ]));
         Evaler.addGlobal({a: 15});
         Evaler.interpret();
@@ -54,7 +51,6 @@ describe("PROPERTIES", () => {
             OP_CODES.PUSH_VAR, 0x0, 0x0,
             OP_CODES.ACCESS_ALIAS, indexOfA,
             OP_CODES.ACCESS_ALIAS, indexOfSomething,
-            OP_CODES.END
         ]));
         Evaler.addGlobal({a: {something: 3.14}});
         Evaler.interpret();
@@ -72,7 +68,6 @@ describe("PROPERTIES", () => {
             OP_CODES.PUSH_8, 0x0,
             OP_CODES.PUSH_8, 0xA,
             OP_CODES.ASSIGN_PROP,
-            OP_CODES.END
         ]));
         Evaler.interpret();
         expect(Evaler.memory[0]).members([10, 1, 2]);
@@ -85,12 +80,10 @@ describe("PROPERTIES", () => {
             OP_CODES.PUSH_VAR, 0x0, 0x0,
             OP_CODES.ACCESS_ALIAS, indexOfName,
             OP_CODES.PUSH_8, indexOfFunc,
-            OP_CODES.FN_START, 0x0, 0xA,
+            OP_CODES.FN, 0x0, 0xA,
             OP_CODES.PUSH_STR, 0x0, 0x6, 0x48, 0x69, 0x64, 0x64, 0x65, 0x6e,
             OP_CODES.RETURN,
-            OP_CODES.FN_END,
             OP_CODES.ASSIGN_PROP_ALIAS_POP,
-            OP_CODES.END
         ]));
         Evaler.addGlobal({
             name: {
@@ -110,8 +103,7 @@ describe("PROPERTIES", () => {
                 OP_CODES.PUSH_VAR, 0x0, 0x0,
                 OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfPerson,
                 OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfSecrets,
-                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfLies,
-                OP_CODES.END
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfLies
             ]));
             Evaler.addGlobal({
                 person: {
@@ -130,8 +122,7 @@ describe("PROPERTIES", () => {
                 OP_CODES.PUSH_VAR, 0x0, 0x0,
                 OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfPerson,
                 OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfSecrets,
-                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfLies,
-                OP_CODES.END
+                OP_CODES.ACCESS_ALIAS_OPTIONAL, indexOfLies
             ]));
             Evaler.addGlobal({
                 person: {

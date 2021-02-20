@@ -19,7 +19,6 @@ describe("LOOP", () => {
             OP_CODES.CALL_POP, 0x1,
             OP_CODES.INC, 0x0, 0x1,
             OP_CODES.GOTO, 0x0, 0x9,
-            OP_CODES.END
         ]));
 
         /** Same as:
@@ -42,8 +41,7 @@ describe("LOOP", () => {
             OP_CODES.PUSH_VAR, 0x0, 0x0, OP_CODES.ASSIGN_POP, 0x0, 0x1, // let newI = i;
             OP_CODES.DEC_POP, 0x0, 0x1, // decrement newI
             OP_CODES.INC, 0x0, 0x0, // increment i
-            OP_CODES.GOTO, 0x0, 0x5,
-            OP_CODES.END
+            OP_CODES.GOTO, 0x0, 0x5
         ]));
         Evaler.interpret();
         expect(Evaler.memory[1]).to.be.equal(8);
@@ -67,8 +65,7 @@ describe("LOOP", () => {
             OP_CODES.PUSH_VAR, 0x0, 0x1,
             OP_CODES.CALL_POP, 0x1,
             OP_CODES.INC, 0x0, 0x1,
-            OP_CODES.GOTO, 0x0, 0x9,
-            OP_CODES.END
+            OP_CODES.GOTO, 0x0, 0x9
         ]));
         Evaler.interpret();
         expect(Evaler.memory[0]).members([0, 1, 2, 3, 4]);

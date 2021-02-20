@@ -12,7 +12,6 @@ describe("IF", () => {
             OP_CODES.JUMP_TRUE, 0x0, 0x5, // If the last pushed value is true, jump 5 bytes ahead
             OP_CODES.PUSH_8, 0x5, OP_CODES.ASSIGN, 0x0, 0x1, // If the variable "0" is false, set a to 5
             OP_CODES.PUSH_8, 0x9, OP_CODES.ASSIGN, 0x0, 0x1, // If the variable "0" is true, set a to 9
-            OP_CODES.END
         ]));
         Evaler.addGlobal(true);
         Evaler.interpret();
@@ -35,7 +34,6 @@ describe("IF", () => {
             /* 11 */ OP_CODES.JUMP, 0x0, 0x2,
             /**12 */ OP_CODES.PUSH_8, 0x1, // if var 0 === "yes" push 1 to stack.
             OP_CODES.PUSH_8, 0x4,
-            OP_CODES.END
         ]));
     
         /**

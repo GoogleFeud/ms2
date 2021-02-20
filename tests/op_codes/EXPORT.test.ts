@@ -7,8 +7,7 @@ describe("EXPORT", () => {
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x0,
         OP_CODES.PUSH_8, 0x5,
-        OP_CODES.EXPORT, 0x0, 0x7, 0x73, 0x6f, 0x6d, 0x65, 0x4e, 0x75, 0x6d,
-        OP_CODES.END
+        OP_CODES.EXPORT, 0x0, 0x7, 0x73, 0x6f, 0x6d, 0x65, 0x4e, 0x75, 0x6d
     ]));
     Evaler.interpret();
     expect(Evaler.exports.someNum).to.be.equal(5);
@@ -20,8 +19,7 @@ describe("EXPORT_ALIAS", () => {
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x0,
         OP_CODES.PUSH_8, 0x3,
-        OP_CODES.EXPORT_ALIAS, toBeExported, 
-        OP_CODES.END
+        OP_CODES.EXPORT_ALIAS, toBeExported
     ]));
     Evaler.interpret();
     expect(Evaler.exports.someNum).to.be.equal(3);
