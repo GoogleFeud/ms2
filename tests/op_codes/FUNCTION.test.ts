@@ -49,7 +49,7 @@ describe("FUNCTION", () => {
             ]));
             Evaler.interpret();
             const fn = Evaler.stack.pop();
-            expect(fn.call().call(undefined, 5, 5)).to.be.equal(10);
+            expect(fn.call()(5, 5)).to.be.equal(10);
         });
     
         
@@ -73,7 +73,7 @@ describe("FUNCTION", () => {
             ]));
             Evaler.interpret();
             const fn = Evaler.stack.pop();
-            expect(fn.call()).to.be.equal(10);
+            expect(fn()).to.be.equal(10);
         });
     
         it("Function which calls a function that accepts a function", () => {
@@ -92,7 +92,7 @@ describe("FUNCTION", () => {
                 OP_CODES.CALL, 0x1
             ]));
             Evaler.addGlobal((fn: MSFunction) => {
-                expect(fn.call(undefined, 10, 25)).to.be.equal(10);
+                expect(fn(10, 25)).to.be.equal(10);
             });
             Evaler.interpret();
         });
@@ -117,7 +117,7 @@ describe("FUNCTION", () => {
             ]));
             Evaler.interpret();
             const fn = Evaler.stack.pop();
-            expect(fn.call().call(undefined, 1).call(undefined, 5)).to.be.equal(6);
+            expect(fn()(1)(5)).to.be.equal(6);
         });
     });
 

@@ -19,6 +19,7 @@ console.log("For loop:\n");
 
     console.log(`Javascript (${arr}): `, performance.now() - time1);
 
+    
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x2,
         OP_CODES.PUSH_ARR, 0x0, 0x0, OP_CODES.LET, // let arr = [];
@@ -35,6 +36,7 @@ console.log("For loop:\n");
         OP_CODES.PUSH_VAR, 0x0, 0x0,
         OP_CODES.EXPORT, 0x0, 0x3, 0x72, 0x65, 0x73 
     ]));
+
 
     const time2 = performance.now();
     Evaler.interpret();

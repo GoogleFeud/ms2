@@ -28,7 +28,7 @@ describe("CALL", () => {
             OP_CODES.RETURN
         ]));
         Evaler.interpret();
-        expect(Evaler.stack.pop().call(undefined, 7, 3)).to.be.equal(4);
+        expect(Evaler.stack.pop()(7, 3)).to.be.equal(4);
     });
 
     

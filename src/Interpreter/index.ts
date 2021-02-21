@@ -52,6 +52,7 @@ export const enum OP_CODES {
     LESS_THAN,
     GREATER_OR_EQUAL,
     LESS_OR_EQUAL,
+    LOOP,
     BREAKPOINT,
     END
 }
@@ -328,13 +329,13 @@ export class Interpreter {
             case OP_CODES.CALL: {
                 const stackLen = stack.length;
                 const args = stack.splice(stackLen - code.readUInt8(offset++), stackLen);
-                stack.push(stack.pop().call(undefined, ...args)); 
+                stack.push(stack.pop()(...args)); 
                 break;
             }
             case OP_CODES.CALL_POP: {
                 const stackLen = stack.length;
                 const args = stack.splice(stackLen - code.readUInt8(offset++), stackLen);
-                stack.pop().call(undefined, ...args); 
+                stack.pop()(...args); 
                 break;
             }
             case OP_CODES.JUMP_FALSE:
@@ -351,6 +352,21 @@ export class Interpreter {
             case OP_CODES.GOTO:
                 offset = code.readUInt16BE(offset);
                 break;
+                /**     case OP_CODES.LOOP: {
+                const conditionSize = code.readUInt16BE(offset);
+                offset += 2;
+                const bodySize = code.readUInt16BE(offset);
+                offset += 2;
+                const finalConditionSize = offset + conditionSize;
+                const finalBodySize = finalConditionSize + bodySize;
+                this.interpret(offset, finalConditionSize);
+                while(this.stack.pop()) {
+                    this.interpret(finalConditionSize, finalBodySize);
+                    this.interpret(offset, finalConditionSize);
+                }
+                offset = finalBodySize;
+                break;
+            } */
             case OP_CODES.EXPORT: {
                 const size = code.readUInt16BE(offset);
                 this.exports[code.toString("utf-8", offset += 2, offset += size)] = stack.pop();
