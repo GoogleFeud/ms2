@@ -63,7 +63,7 @@ export class Interpreter {
     memory: Array<any>
     arguments: Array<any>
     code: Buffer
-    private pausedAt: number
+    pausedAt: number
     currentMemoryAddress: number
     onBreakpoint?: () => boolean; 
     constructor(code: Buffer) {
@@ -311,7 +311,7 @@ export class Interpreter {
                 break;
             }
             case OP_CODES.ASSIGN_PROP_ALIAS_POP: {
-                const value = stack.pop();
+                const value = stack.pop();  "";
                 const propToModify = PropertyAlias[stack.pop()];
                 const propParent = stack.pop();
                 propParent[propToModify] = value;
