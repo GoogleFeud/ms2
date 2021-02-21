@@ -130,13 +130,39 @@ describe("CALL", () => {
             OP_CODES.CALL, 0x2,
             OP_CODES.LET_POP // Offset 2
         ]));
-        Evaler.onBreakpoint = () => {
-            console.log(Evaler.stack);
-            return true;
-        };
         Evaler.interpret();
         expect(Evaler.memory[1]).to.be.equal(3);
         expect(Evaler.memory[2]).to.be.equal(9);
+    });
+
+    it("2 functions, 2 function calls", () => {
+        const Evaler = new Interpreter(Buffer.from([
+            0x0, 0x3,
+            OP_CODES.FN, 0x0, 0x6,
+            OP_CODES.PUSH_ARG, 0x0,
+            OP_CODES.PUSH_ARG, 0x1,
+            OP_CODES.ADD,
+            OP_CODES.RETURN,
+            OP_CODES.LET, // Offset 0
+
+            OP_CODES.FN, 0x0, 0x6,
+            OP_CODES.PUSH_ARG, 0x0,
+            OP_CODES.PUSH_ARG, 0x1,
+            OP_CODES.SUB,
+            OP_CODES.RETURN,
+            OP_CODES.LET_POP, // Offset 1
+
+            OP_CODES.PUSH_VAR, 0x0, 0x1, 
+            OP_CODES.PUSH_VAR, 0x0, 0x0,
+            OP_CODES.PUSH_8, 0x5,
+            OP_CODES.PUSH_8, 0x5,
+            OP_CODES.CALL, 0x2, // add(5, 5);
+            OP_CODES.PUSH_8, 0x4,
+            OP_CODES.CALL, 0x2, // sub(add(5, 5), 4);
+            OP_CODES.LET_POP, // const res = sub(add(5, 5), 4);
+        ]));
+        Evaler.interpret();
+        expect(Evaler.memory[2]).to.be.equal(6);
     });
 
 });

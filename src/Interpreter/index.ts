@@ -52,7 +52,6 @@ export const enum OP_CODES {
     LESS_THAN,
     GREATER_OR_EQUAL,
     LESS_OR_EQUAL,
-    BREAK,
     BREAKPOINT,
     END
 }
@@ -63,7 +62,6 @@ export class Interpreter {
     memory: Array<any>
     arguments: Array<any>
     code: Buffer
-    returnValue: any
     private pausedAt: number
     currentMemoryAddress: number
     onBreakpoint?: () => boolean; 
@@ -91,7 +89,6 @@ export class Interpreter {
     clear() : this {
         this.stack.length = 0;
         this.arguments.length = 0;
-        this.exports = {};
         this.memory = new Array(this.code.readUInt16BE(0));
         this.pausedAt = 2;
         this.currentMemoryAddress = 0;
@@ -111,7 +108,7 @@ export class Interpreter {
      * @param endByte - Where to stop interpreting the code
      * @param endByteArg - An extra byte 
      */
-    interpret(offset = this.pausedAt, endAt = this.code.byteLength, inFn?: boolean) : number {
+    interpret(offset = this.pausedAt, endAt = this.code.byteLength, inFn?: boolean) : any {
         const code = this.code;
         const memory = this.memory;
         const stack = this.stack;
@@ -327,18 +324,17 @@ export class Interpreter {
                 break;
             }
             case OP_CODES.RETURN:
-                this.returnValue = stack.pop();
-                break;
+                return stack.pop();
             case OP_CODES.CALL: {
                 const stackLen = stack.length;
                 const args = stack.splice(stackLen - code.readUInt8(offset++), stackLen);
-                stack.push(this.returnValue = stack.pop().call(undefined, ...args)); 
+                stack.push(stack.pop().call(undefined, ...args)); 
                 break;
             }
             case OP_CODES.CALL_POP: {
                 const stackLen = stack.length;
                 const args = stack.splice(stackLen - code.readUInt8(offset++), stackLen);
-                this.returnValue = stack.pop().call(undefined, ...args); 
+                stack.pop().call(undefined, ...args); 
                 break;
             }
             case OP_CODES.JUMP_FALSE:
@@ -355,8 +351,6 @@ export class Interpreter {
             case OP_CODES.GOTO:
                 offset = code.readUInt16BE(offset);
                 break;
-            case OP_CODES.BREAK:
-                return offset;
             case OP_CODES.EXPORT: {
                 const size = code.readUInt16BE(offset);
                 this.exports[code.toString("utf-8", offset += 2, offset += size)] = stack.pop();
@@ -369,7 +363,7 @@ export class Interpreter {
             case OP_CODES.BREAKPOINT: 
                 this.pausedAt = offset;
                 if (this.onBreakpoint && this.onBreakpoint()) return this.interpret(this.pausedAt, endAt);
-                return offset;
+                return;
             default:
                 throw `Unknown OP code at byte ${offset}`;
             }

@@ -1,6 +1,7 @@
 
 // You need to npm i "sval" for this to work
 
+import Sval from "sval";
 import {performance} from "perf_hooks";
 import { Interpreter, OP_CODES } from "../src/Interpreter";
 //@/ts-expect-error For testing only
@@ -16,7 +17,7 @@ console.log("For loop:\n");
         arr.push(i);
     }
 
-    console.log("Javascript: ", performance.now() - time1);
+    console.log(`Javascript (${arr}): `, performance.now() - time1);
 
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x2,
@@ -30,13 +31,15 @@ console.log("For loop:\n");
         OP_CODES.PUSH_VAR, 0x0, 0x1,
         OP_CODES.CALL_POP, 0x1,
         OP_CODES.INC, 0x0, 0x1,
-        OP_CODES.GOTO, 0x0, 0x9
+        OP_CODES.GOTO, 0x0, 0x9,
+        OP_CODES.PUSH_VAR, 0x0, 0x0,
+        OP_CODES.EXPORT, 0x0, 0x3, 0x72, 0x65, 0x73 
     ]));
 
     const time2 = performance.now();
     Evaler.interpret();
 
-    console.log("MS2: ", performance.now() - time2);
+    console.log(`MS2 (${Evaler.exports.res}): `, performance.now() - time2);
 
 
     const svalAST = sval.parse(`
@@ -44,21 +47,23 @@ const arr = [];
 for (let i=0; i < 10; i++) {
     arr.push(i);
 }
+exports.res = arr;
 `);
 
     const time3 = performance.now();
     sval.run(svalAST);
-    console.log("Sval: ", performance.now() - time3);
+    console.log(`Sval (${sval.exports.res}): `, performance.now() - time3);
 
 
     const time4 = performance.now();
-    eval(`
+    const res1 = eval(`
 const arr = [];
 for (let i=0; i < 10; i++) {
     arr.push(i);
 }
+arr;
 `);
-    console.log("Javascript Eval: ", performance.now() - time4);
+    console.log(`Javascript Eval (${res1}): `, performance.now() - time4);
 })();
 
 console.log("\n\n");
@@ -107,6 +112,58 @@ exports.res = func(1, 5, 9);
     const res1 = eval(`
 const func = (a, b, c) => a + b + c;
 func(1, 5, 9);
+`);
+    console.log(`Javascript Eval (${res1}): `, performance.now() - time4);
+})();
+
+console.log("\n\n");
+
+// Third benchmark, If else statements
+(() => {
+    console.log("Accessing properties:\n\n");
+
+    const time1 = performance.now();
+
+    const obj = { a: 1, b: 2, c: 3};
+    const res = obj.a + obj.b + obj.c;
+
+    console.log(`Javascript (${res}): `, performance.now() - time1);
+
+    const Evaler = new Interpreter(Buffer.from([
+        0x0, 0x1,
+        OP_CODES.PUSH_8, 0x1,
+        OP_CODES.PUSH_8, 0x2,
+        OP_CODES.PUSH_8, 0x3,
+        OP_CODES.PUSH_ARR, 0x0, 0x3,
+        OP_CODES.LET, // let obj = ...; 0
+        OP_CODES.ACCESS, 0x0, 0x0,
+        OP_CODES.PUSH_VAR, 0x0, 0x0,
+        OP_CODES.ACCESS, 0x0, 0x1,
+        OP_CODES.ADD, 
+        OP_CODES.PUSH_VAR, 0x0, 0x0,
+        OP_CODES.ACCESS, 0x0, 0x2,
+        OP_CODES.ADD,
+        OP_CODES.EXPORT, 0x0, 0x3, 0x72, 0x65, 0x73
+    ]));
+
+    const time2 = performance.now();
+    Evaler.interpret();
+
+    console.log(`MS2 (${Evaler.exports.res}): `, performance.now() - time2);
+
+    const svalAST = sval.parse(`
+    const obj = { a: 1, b: 2, c: 3};
+    exports.res = obj.a + obj.b + obj.c;
+`);
+
+    const time3 = performance.now();
+    sval.run(svalAST);
+    console.log(`Sval (${sval.exports.res}): `, performance.now() - time3);
+
+    const time4 = performance.now();
+    const res1 = eval(`
+    const obj = { a: 1, b: 2, c: 3};
+obj.a + obj.b + obj.c;
 `);
     console.log(`Javascript Eval (${res1}): `, performance.now() - time4);
 })();

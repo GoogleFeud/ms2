@@ -15,10 +15,7 @@ export class MSFunction {
     call<T>(thisArg: any, ...args: Array<any>) : T {
         if (this.shouldClearArgsStack) this.ctx.arguments.length = 0;
         this.ctx.arguments.push(...args);
-        this.ctx.interpret(this.offset, this.endsAt, true);
-        const rtrnValue = this.ctx.returnValue;
-        delete this.ctx.returnValue;
-        return rtrnValue;
+        return this.ctx.interpret(this.offset, this.endsAt, true);
     }
     
 } 
