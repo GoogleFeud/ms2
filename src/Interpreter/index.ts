@@ -66,6 +66,7 @@ export class Interpreter {
     pausedAt: number
     currentMemoryAddress: number
     onBreakpoint?: () => boolean; 
+    onJump?: (index: number) => boolean;
     constructor(code: Buffer) {
         this.code = code;
         this.stack = [];
@@ -107,7 +108,7 @@ export class Interpreter {
      * 
      * @param offset - Where to start interpreting the code
      * @param endByte - Where to stop interpreting the code
-     * @param endByteArg - An extra byte 
+     * @param inFn - If the interpreter is certainly executing a function
      */
     interpret(offset = this.pausedAt, endAt = this.code.byteLength, inFn?: boolean) : any {
         const code = this.code;
@@ -350,23 +351,9 @@ export class Interpreter {
                 offset += code.readUInt16BE(offset) + 2;
                 break;
             case OP_CODES.GOTO:
+                if (this.onJump?.(offset)) return;
                 offset = code.readUInt16BE(offset);
                 break;
-                /**     case OP_CODES.LOOP: {
-                const conditionSize = code.readUInt16BE(offset);
-                offset += 2;
-                const bodySize = code.readUInt16BE(offset);
-                offset += 2;
-                const finalConditionSize = offset + conditionSize;
-                const finalBodySize = finalConditionSize + bodySize;
-                this.interpret(offset, finalConditionSize);
-                while(this.stack.pop()) {
-                    this.interpret(finalConditionSize, finalBodySize);
-                    this.interpret(offset, finalConditionSize);
-                }
-                offset = finalBodySize;
-                break;
-            } */
             case OP_CODES.EXPORT: {
                 const size = code.readUInt16BE(offset);
                 this.exports[code.toString("utf-8", offset += 2, offset += size)] = stack.pop();

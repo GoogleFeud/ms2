@@ -47,4 +47,24 @@ describe("LOOP", () => {
         expect(Evaler.memory[1]).to.be.equal(8);
     });
 
+    it("Stopping script after Nth iteration", () => {
+        let iterationCount = 0;
+        const Evaler = new Interpreter(Buffer.from([
+            0x0, 0x2,
+            OP_CODES.PUSH_8, 0x0, OP_CODES.LET, // let i = 0;
+            OP_CODES.PUSH_8, 0x7E, // 126
+            OP_CODES.LESS_THAN, // i < 126
+            OP_CODES.JUMP_FALSE, 0x0, 0x6,
+            OP_CODES.INC, 0x0, 0x0, // increment i
+            OP_CODES.GOTO, 0x0, 0x5
+        ]));
+        Evaler.onJump = () => {
+            if (iterationCount >= 100) return true;
+            iterationCount++;
+            return false;
+        };
+        Evaler.interpret();
+        expect(iterationCount).to.be.equal(100);
+    });
+
 });

@@ -77,6 +77,20 @@ describe("CALL", () => {
         expect(Evaler.memory[0]).members([2, 5, 6, 8, 9]);
     });
 
+    it("Map.set", () => {
+        const Evaler = new Interpreter(Buffer.from([
+            0x0, 0x1,
+            OP_CODES.PUSH_VAR, 0x0, 0x0, // This is our map
+            OP_CODES.ACCESS_ALIAS, 0x15, // 0x15 is the alias for the "set" function
+            OP_CODES.PUSH_STR, 0x0, 0x4, 0x74, 0x65, 0x73, 0x74,
+            OP_CODES.PUSH_8, 0x5,
+            OP_CODES.CALL, 0x2
+        ]));
+        Evaler.addGlobal(new Map());
+        Evaler.interpret();
+        expect(Evaler.memory[0].get("test")).to.be.equal(5);
+    });
+
     it("Native-native function calling custom function", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x1,
@@ -88,8 +102,7 @@ describe("CALL", () => {
             OP_CODES.LET
         ]));
         Evaler.interpret();
-        const sortfn = Evaler.memory[0];
-        const arr = [5, 4, 3, 1, 2].sort((a, b) => sortfn.call(a, b));
+        const arr = [5, 4, 3, 1, 2].sort(Evaler.memory[0]);
         expect(arr).members([1, 2, 3, 4, 5]);
     });
 

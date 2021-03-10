@@ -169,3 +169,63 @@ obj.a + obj.b + obj.c;
 `);
     console.log(`Javascript Eval (${res1}): `, performance.now() - time4);
 })();
+
+// Fourth benchmark, adding numbers to map
+(() => {
+    console.log("Adding entries to map:\n\n");
+
+    const map = new Map();
+    const time1 = performance.now();
+
+    map.set("A", 1);
+    map.set("B", 2);
+    map.set("C", 3);
+
+    console.log(`Javascript (${[...map.values()]}): `, performance.now() - time1);
+
+    const Evaler = new Interpreter(Buffer.from([
+        0x0, 0x1,
+        OP_CODES.PUSH_VAR, 0x0, 0x0,
+        OP_CODES.ACCESS_ALIAS, 0x15,
+        OP_CODES.PUSH_STR, 0x0, 0x1, 0x41,
+        OP_CODES.PUSH_8, 0x1,
+        OP_CODES.CALL_POP, 0x2,
+        OP_CODES.PUSH_VAR, 0x0, 0x0,
+        OP_CODES.ACCESS_ALIAS, 0x15,
+        OP_CODES.PUSH_STR, 0x0, 0x1, 0x42,
+        OP_CODES.PUSH_8, 0x2,
+        OP_CODES.CALL_POP, 0x2,
+        OP_CODES.PUSH_VAR, 0x0, 0x0,
+        OP_CODES.ACCESS_ALIAS, 0x15,
+        OP_CODES.PUSH_STR, 0x0, 0x1, 0x43,
+        OP_CODES.PUSH_8, 0x3,
+        OP_CODES.CALL_POP, 0x2
+    ]));
+
+    Evaler.addGlobal(new Map());
+    const time2 = performance.now();
+    Evaler.interpret();
+
+    console.log(`MS2 (${[...Evaler.memory[0].values()]}): `, performance.now() - time2);
+
+    const svalAST = sval.parse(`
+    map.set("A", 1);
+    map.set("B", 2);
+    map.set("C", 3);
+`);
+    const map2 = new Map();
+    sval.import("map", map2);
+    const time3 = performance.now();
+    sval.run(svalAST);
+    console.log(`Sval (${[...map2.values()]}): `, performance.now() - time3);
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const map1 = new Map();
+    const time4 = performance.now();
+    eval(`
+    map1.set("A", 1);
+    map1.set("B", 2);
+    map1.set("C", 3);
+`);
+    console.log(`Javascript Eval (${[...map1.values()]}): `, performance.now() - time4);
+})();
