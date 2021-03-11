@@ -5,6 +5,8 @@ export interface ICompilerSettings {
     bufferSize?: number
 }
 
+
+
 export class CompilerContext {
     blockSizes: Array<number>
     offset: number
