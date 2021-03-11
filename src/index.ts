@@ -4,9 +4,14 @@ import { prettifyError } from "./util";
 
 const t = performance.now();
 const parser = new Parser(`
-if (true) {
-    const arr = [1, 2, [1, 2, 3]];
+struct Something {
+    name = 1,
+    age = 2,
+    failedAt = 3
 }
+
+const a = Something{name};
+const a b, c = 10;
 `, {onError: (err, stream) => {
     console.log(prettifyError(err, stream));
 }});

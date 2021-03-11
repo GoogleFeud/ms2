@@ -15,10 +15,12 @@ export const enum AST_TYPES {
     LOOP,
     BLOCK,
     FN,
+    STRUCT,
+    STRUCT_INIT,
     RETURN
 }
 
-export type AST_Node = AST_Block|AST_String|AST_Number|AST_Boolean|AST_Null|AST_Array|AST_Binary|AST_Not|AST_If|AST_Fn|AST_Block|AST_Access|AST_Call|AST_Return|SkipParse;
+export type AST_Node = AST_Struct|AST_Struct_Init|AST_Block|AST_String|AST_Number|AST_Boolean|AST_Null|AST_Array|AST_Binary|AST_Not|AST_If|AST_Fn|AST_Block|AST_Access|AST_Call|AST_Return;
 
 export interface AST_Block {
     type: AST_TYPES,
@@ -102,6 +104,18 @@ export interface AST_Call {
 export interface AST_Return {
     type: AST_TYPES,
     value?: AST_Node
+}
+
+export interface AST_Struct {
+    type: AST_TYPES,
+    name: string,
+    fields: Array<{name: string, defaultValue?: AST_Node}>
+}
+
+export interface AST_Struct_Init {
+    type: AST_TYPES,
+    name: string,
+    fields: Array<[string, AST_Node]>
 }
 
 export type SkipParse = 1;

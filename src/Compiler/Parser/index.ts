@@ -51,15 +51,15 @@ export class Parser {
         this.ctx = PARSER_CONTEXT.NONE;
     }
 
-    private maybeBinary(left: AST_Node|undefined, prec = 0) : AST_Node|undefined {
-        if (!left) return;
+    private maybeBinary(left: AST_Node|SkipParse|undefined, prec = 0) : AST_Node|SkipParse|undefined {
+        if (!left || left === 1) return;
         const token = this.tokens.peek();
         if (!token || token.type !== TOKEN_TYPES.OP || !OperatorPrecedence[token.value]) return left;
         const otherPrec = OperatorPrecedence[token.value];
         if (otherPrec >= prec) {
             this.tokens.consume(); // Skip the operator
             const right = this.maybeBinary(this.parseAtom(), otherPrec);
-            if (!right) return;
+            if (!right || right === 1) return;
             return this.maybeBinary({
                 operator: token.value as string,
                 type: AST_TYPES.BINARY,
@@ -70,7 +70,7 @@ export class Parser {
     }
 
 
-    parseAtom(token = this.tokens.peek()) : AST_Node|undefined {
+    parseAtom(token = this.tokens.peek()) : AST_Node|SkipParse|undefined {
         if (!token) return;
         // Parses any prefixes
         // ! - NOT
@@ -134,6 +134,7 @@ export class Parser {
         // . - Property accessor
         // [ - Property accessor
         // ( - Call
+        // { - Struct instantiation
         if (!resToken || resToken === 1) return;
         return this.parseSuffix(resToken as AST_Node);
     }
@@ -154,6 +155,12 @@ export class Parser {
         }
         case "(": {
             const t = ExpressionParsers["call"](this, this.tokens.consume() as Token, token);
+            if (!t || t === 1) return token;
+            return this.parseSuffix(t);
+        }
+        case "{": {
+            if (token.type !== AST_TYPES.ID) return token;
+            const t = ExpressionParsers["init"](this, this.tokens.consume() as Token, token);
             if (!t || t === 1) return token;
             return this.parseSuffix(t);
         }

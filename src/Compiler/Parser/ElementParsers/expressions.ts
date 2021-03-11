@@ -113,13 +113,39 @@ DefaultElementParsers["array"] = (parser) => {
     const els = [];
     while (!parser._isOfType(TOKEN_TYPES.PUNC, "]")) {
         els.push(parser.parseExpression() as unknown as AST_Node);
-        if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
-        else break;
+        if (parser._isOfType(TOKEN_TYPES.PUNC, "]")) break;
+        else if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
+        else return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected comma after field");
     }
     if (!parser._expectToken(TOKEN_TYPES.PUNC, "]", true, "Missing closing square bracket in array expression")) return;
     return {
         type: AST_TYPES.ARRAY,
         elements: els
+    };
+};
+
+DefaultElementParsers["init"] = (parser, _, name) => {
+    const fields = [];
+    let currentPair = [];
+    while (!parser._isOfType(TOKEN_TYPES.PUNC, "}")) {
+        currentPair[0] = (parser.tokens.consume() as Token).value;
+        if (parser._isOfType(TOKEN_TYPES.PUNC, ":")) {
+            parser.tokens.consume();
+            currentPair[1] = parser.parseExpression();
+            if (!currentPair[1] || currentPair[1] === 1) return;
+            fields.push(currentPair);
+            currentPair = [];
+        } else fields.push(currentPair);
+        currentPair = [];
+        if (parser._isOfType(TOKEN_TYPES.PUNC, "}")) break;
+        else if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
+        else return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected comma after field");
+    }
+    parser._expectToken(TOKEN_TYPES.PUNC, "}", true, "Missing closing bracket in struct instantiation");
+    return {
+        type: AST_TYPES.STRUCT_INIT,
+        name: name.value,
+        fields
     };
 };
 

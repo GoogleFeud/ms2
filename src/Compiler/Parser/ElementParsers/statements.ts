@@ -19,7 +19,9 @@ DefaultElementParsers["let"] = (parser) => {
     if (!final.declarations.length) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected variable name in let statement");
     if (token && token.value === "=") {
         parser.tokens.consume(); // Skip = 
-        final.initializor = parser.parseExpression();
+        const init = parser.parseExpression();
+        if (!init || init === 1) return;
+        final.initializor = init;
     }
     return final as AST_Node;
 };
@@ -36,7 +38,9 @@ DefaultElementParsers["const"] = (parser) => {
     if (!final.declarations.length) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected variable name in let statement");
     if (token && token.value === "=") {
         parser.tokens.consume(); // Skip = 
-        final.initializor = parser.parseExpression();
+        const init = parser.parseExpression();
+        if (!init || init === 1) return;
+        final.initializor = init;
     }
     return final as AST_Node;
 };
@@ -96,6 +100,34 @@ DefaultElementParsers["if"] = (parser) => {
         then,
         else: _else
     } as AST_If;
+};
+
+DefaultElementParsers["struct"] = (parser) => {
+    parser.tokens.consume(); // skips struct
+    const structName = parser.tokens.consume();
+    if (!structName || structName.type !== TOKEN_TYPES.ID) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected struct name after keyword");
+    parser._expectToken(TOKEN_TYPES.PUNC, "{", true, "Expected curly bracket after struct name");
+    const fields = [];
+    while (!parser._isOfType(TOKEN_TYPES.PUNC, "}")) {
+        if (!parser._isOfType(TOKEN_TYPES.ID)) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected identifier name for struct field");
+        const fieldName = (parser.tokens.consume() as Token).value;
+        if (parser._isOfType(TOKEN_TYPES.OP, "=")) {
+            parser.tokens.consume();
+            const defaultValue = parser.parseExpression();
+            if (!defaultValue || defaultValue === 1) return;
+            fields.push({name: fieldName, defaultValue});
+        } else fields.push({name: fieldName});
+        if (parser._isOfType(TOKEN_TYPES.PUNC, "}")) break;
+        else if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
+        else parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected comma after field declaration");
+    }
+    if (fields.length === 0) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "A struct must have at least one field");
+    if (!parser._expectToken(TOKEN_TYPES.PUNC, "}", true, "Missing closing curly bracket in struct definition")) return;
+    return {
+        type: AST_TYPES.STRUCT,
+        name: structName,
+        fields
+    };
 };
 
 
