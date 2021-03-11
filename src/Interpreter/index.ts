@@ -1,4 +1,3 @@
-
 import { MSFunction } from "./structs/MSFunction";
 import { PropertyAlias } from "../util/default_property_alias";
 
@@ -126,7 +125,7 @@ export class Interpreter {
                 stack.push(code.readInt8(offset++));
                 break;
             case OP_CODES.PUSH_BOOL:
-                stack.push(Boolean(code.readInt8(offset++)));
+                stack.push(Boolean(code.readUInt8(offset++)));
                 break;
             case OP_CODES.PUSH_UNDEFINED:
                 stack.push(undefined);
