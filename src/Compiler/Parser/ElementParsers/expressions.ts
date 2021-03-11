@@ -73,24 +73,26 @@ DefaultElementParsers[TOKEN_TYPES.ID] = (parser, token, hasBeenConsumed) => {
     return (hasBeenConsumed ? token:parser.tokens.consume()) as unknown as AST_Id;
 };
 
-DefaultElementParsers["a."] = (parser, _, left) => {
+DefaultElementParsers["a."] = (parser, _, {token, optional}) => {
     if (!parser._isOfType(TOKEN_TYPES.ID)) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected identifier in property access chain");
     return {
-        start: left as AST_Node, 
+        start: token as AST_Node, 
         accessor: parser.tokens.consume() as unknown as AST_Node,
-        type: AST_TYPES.ACCESS
+        type: AST_TYPES.ACCESS,
+        optional
     };
 };
 
-DefaultElementParsers["a["] = (parser, _, left) => {
+DefaultElementParsers["a["] = (parser, _, {token, optional}) => {
     if (parser._isOfType(TOKEN_TYPES.PUNC, "]")) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected expression inside property access chain");
     const exp = parser.parseExpression();
     if (exp === 1) return 1;
     parser._expectToken(TOKEN_TYPES.PUNC, "]", true, "Expected closing square bracket inside property access chain");
     return {
-        start: left as AST_Node, 
+        start: token as AST_Node, 
         accessor: exp as AST_Node,
-        type: AST_TYPES.ACCESS
+        type: AST_TYPES.ACCESS,
+        optional
     };
 };
 

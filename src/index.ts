@@ -4,14 +4,14 @@ import { prettifyError } from "./util";
 
 const t = performance.now();
 const parser = new Parser(`
-struct Something {
-    name = 1,
-    age = 2,
-    failedAt = 3
+struct Person {
+    name,
+    age = 18,
+    phone?
 }
 
-const a = Something{name};
-const a b, c = 10;
+const Google = Person{name: "Google"};
+print(Google.phone?.model);
 `, {onError: (err, stream) => {
     console.log(prettifyError(err, stream));
 }});

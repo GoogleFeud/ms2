@@ -110,13 +110,18 @@ DefaultElementParsers["struct"] = (parser) => {
     const fields = [];
     while (!parser._isOfType(TOKEN_TYPES.PUNC, "}")) {
         if (!parser._isOfType(TOKEN_TYPES.ID)) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected identifier name for struct field");
+        let optional;
         const fieldName = (parser.tokens.consume() as Token).value;
+        if (parser._isOfType(TOKEN_TYPES.PUNC, "?")) {
+            parser.tokens.consume();
+            optional = true;
+        }
         if (parser._isOfType(TOKEN_TYPES.OP, "=")) {
             parser.tokens.consume();
             const defaultValue = parser.parseExpression();
             if (!defaultValue || defaultValue === 1) return;
-            fields.push({name: fieldName, defaultValue});
-        } else fields.push({name: fieldName});
+            fields.push({name: fieldName, defaultValue, optional});
+        } else fields.push({name: fieldName, optional});
         if (parser._isOfType(TOKEN_TYPES.PUNC, "}")) break;
         else if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
         else parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected comma after field declaration");

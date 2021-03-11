@@ -91,9 +91,9 @@ export interface AST_Fn {
 export interface AST_Access {
     type: AST_TYPES,
     start: AST_Node,
+    optional: boolean,
     accessor: AST_Node
 }
-
 
 export interface AST_Call {
     type: AST_TYPES,
@@ -109,7 +109,7 @@ export interface AST_Return {
 export interface AST_Struct {
     type: AST_TYPES,
     name: string,
-    fields: Array<{name: string, defaultValue?: AST_Node}>
+    fields: Array<{name: string, defaultValue?: AST_Node, optional: boolean}>
 }
 
 export interface AST_Struct_Init {

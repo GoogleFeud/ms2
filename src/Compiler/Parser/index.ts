@@ -131,8 +131,8 @@ export class Parser {
         })();
         
         // Parses any suffixes
-        // . - Property accessor
-        // [ - Property accessor
+        // . / ?. - Property accessor
+        // [ / ?[] - Property accessor
         // ( - Call
         // { - Struct instantiation
         if (!resToken || resToken === 1) return;
@@ -140,35 +140,44 @@ export class Parser {
     }
 
     parseSuffix(token: AST_Node) : AST_Node|undefined {
-        const nextToken = this.tokens.peek();
+        let nextToken = this.tokens.peek();
         if (!nextToken || nextToken.type !== TOKEN_TYPES.PUNC) return token;
+        let optional;
+        if (nextToken.value === "?") {
+            this.tokens.consume();
+            nextToken = this.tokens.peek();
+            if (!nextToken || nextToken.type !== TOKEN_TYPES.PUNC) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, "Unexpectd ?");
+            optional = true;
+        }
         switch(nextToken.value) {
         case ".": {
-            const t = ExpressionParsers["a."](this, this.tokens.consume() as Token, token);
+            const t = ExpressionParsers["a."](this, this.tokens.consume() as Token, {token, optional});
             if (!t || t === 1) return token;
             return this.parseSuffix(t);
         }
         case "[": {
-            const t = ExpressionParsers["a["](this, this.tokens.consume() as Token, token);
+            const t = ExpressionParsers["a["](this, this.tokens.consume() as Token, {token, optional});
             if (!t || t === 1) return token;
             return this.parseSuffix(t);
         }
         case "(": {
+            if (optional) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, "Unexpectd ?");
             const t = ExpressionParsers["call"](this, this.tokens.consume() as Token, token);
             if (!t || t === 1) return token;
             return this.parseSuffix(t);
         }
         case "{": {
+            if (optional) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, "Unexpectd ?");
             if (token.type !== AST_TYPES.ID) return token;
             const t = ExpressionParsers["init"](this, this.tokens.consume() as Token, token);
             if (!t || t === 1) return token;
             return this.parseSuffix(t);
         }
-        case ";": {
-            this.tokens.consume();
+        default: {
+            if (nextToken.value === ";") this.tokens.consume();
+            if (optional) return this.tokens.stream.error(ERROR_TYPES.SYNTAX, "Unexpectd ?");
             return token;
         }
-        default: return token;
         }
     }
 

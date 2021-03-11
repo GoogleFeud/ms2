@@ -17,7 +17,7 @@ export interface Token {
 
 export const keywords = ["if", "loop", "else", "export", "meta", "let", "const", "true", "false", "null", "return", "struct"];
 export const operators = ["+", "-", "*", "/", "%", "=", "&", "|", "<", ">", "!"];
-export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":", "."];
+export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":", ".", "?"];
 
 // You're a tokenizer baby
 export class Tokenizer {
@@ -151,7 +151,7 @@ function isIdStart(ch: string) : boolean {
 }
 
 function isId(ch: string) : boolean {
-    return isIdStart(ch) || "?!-<>=0123456789".indexOf(ch) >= 0;
+    return isIdStart(ch) || "!-<>=0123456789".indexOf(ch) >= 0;
 }
 
 function isDigit(ch: string) : boolean {
