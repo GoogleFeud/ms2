@@ -6,7 +6,6 @@ export interface ICompilerSettings {
 }
 
 
-
 export class CompilerContext {
     blockSizes: Array<number>
     offset: number

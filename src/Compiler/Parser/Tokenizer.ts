@@ -15,10 +15,11 @@ export interface Token {
     value: string|number
 }
 
-export const keywords = ["if", "loop", "else", "export", "meta", "let", "const", "true", "false", "null"];
+export const keywords = ["if", "loop", "else", "export", "meta", "let", "const", "true", "false", "null", "return"];
 export const operators = ["+", "-", "*", "/", "%", "=", "&", "|", "<", ">", "!"];
 export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":", "."];
 
+// You're a tokenizer baby
 export class Tokenizer {
     stream: InputStream
     current?: Token

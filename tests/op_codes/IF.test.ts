@@ -17,6 +17,7 @@ describe("IF", () => {
         Evaler.interpret();
         expect(Evaler.memory[1]).to.be.equal(9);
     });
+    
     it("IF...else if...else", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x1,

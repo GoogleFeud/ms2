@@ -4,12 +4,14 @@ import { prettifyError } from "./util";
 
 const t = performance.now();
 const parser = new Parser(`
-const a = b(1, 2, ((a, b) => a + b + c / 2).a.b().c[d.e]).a;
+if (true) {
+    const arr = [1, 2, [1, 2, 3]];
+}
 `, {onError: (err, stream) => {
     console.log(prettifyError(err, stream));
 }});
 
 const res = parser.parse();
 console.log(performance.now() - t);
-console.dir(res, {depth: 5});
+console.dir(res, {depth: 7});
 console.log(parser.meta);
