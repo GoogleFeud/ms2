@@ -12,6 +12,8 @@ export const enum OP_CODES {
     PUSH_ARR,
     PUSH_VAR,
     PUSH_ARG,
+    PUSH_ARGS,
+    PUSH_OWN_ARG,
     ADD,
     DIV,
     MUL,
@@ -61,7 +63,6 @@ export class Interpreter {
     stack: Array<any>
     exports: Record<string, any>
     memory: Array<any>
-    arguments: Array<any>
     code: Buffer
     pausedAt: number
     currentMemoryAddress: number
@@ -72,7 +73,6 @@ export class Interpreter {
         this.stack = [];
         this.exports = {};
         this.memory = new Array(code.readUInt16BE(0));
-        this.arguments = [];
         this.pausedAt = 2;
         this.currentMemoryAddress = 0;
     }
@@ -80,7 +80,6 @@ export class Interpreter {
     reuse(code: Buffer) : this {
         this.stack.length = 0;
         this.code = code;
-        this.arguments.length = 0;
         this.exports = {};
         this.memory = new Array(code.readUInt16BE(0));
         this.pausedAt = 2;
@@ -90,7 +89,6 @@ export class Interpreter {
 
     clear() : this {
         this.stack.length = 0;
-        this.arguments.length = 0;
         this.memory = new Array(this.code.readUInt16BE(0));
         this.pausedAt = 2;
         this.currentMemoryAddress = 0;
@@ -110,7 +108,7 @@ export class Interpreter {
      * @param endByte - Where to stop interpreting the code
      * @param inFn - If the interpreter is certainly executing a function
      */
-    interpret(offset = this.pausedAt, endAt = this.code.byteLength, inFn?: boolean) : any {
+    interpret(offset = this.pausedAt, endAt = this.code.byteLength, totalArgs?: Array<any>, args?: Array<any>) : any {
         const code = this.code;
         const memory = this.memory;
         const stack = this.stack;
@@ -149,7 +147,13 @@ export class Interpreter {
                 offset += 2;
                 break;
             case OP_CODES.PUSH_ARG:
-                stack.push(this.arguments[code.readUInt8(offset++)]);
+                stack.push(totalArgs![code.readUInt8(offset++)]);
+                break;
+            case OP_CODES.PUSH_ARGS:
+                stack.push(args || []);
+                break;
+            case OP_CODES.PUSH_OWN_ARG:
+                stack.push(args![code.readUInt8(offset++)]);
                 break;
             case OP_CODES.ADD: {
                 const first = stack.pop();
@@ -321,7 +325,7 @@ export class Interpreter {
             case OP_CODES.FN: {
                 const size = code.readUInt16BE(offset);
                 offset += 2;
-                stack.push(new MSFunction(offset, size, inFn, this));
+                stack.push(new MSFunction(offset, size, totalArgs! || [], this));
                 offset += size;
                 break;
             }

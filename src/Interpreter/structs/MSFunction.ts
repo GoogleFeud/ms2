@@ -1,16 +1,15 @@
 import { Interpreter } from "..";
 
 export class MSFunction extends Function {
-
+    onEnd?: () => void;
     //@ts-expect-error It shouldn't really be an error
-    constructor(offset: number, size: number, inFunc: boolean|undefined, ctx: Interpreter) {
+    constructor(offset: number, size: number, totalArgs?: Array<any>, ctx: Interpreter) {
         // eslint-disable-next-line no-constant-condition
         const endsAt = offset + size;
-        const shouldClearArgs = !inFunc;
         const fn = (...args: Array<any>) => {
-            if (shouldClearArgs) ctx.arguments.length = 0;
-            ctx.arguments.push(...args);
-            return ctx.interpret(offset, endsAt, true); 
+            const copiedArgs = totalArgs ? totalArgs.concat(...args):[];
+            const val = ctx.interpret(offset, endsAt, copiedArgs, args); 
+            return val;
         };
         Object.setPrototypeOf(fn, MSFunction.prototype);
         return fn;

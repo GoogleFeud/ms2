@@ -91,6 +91,24 @@ describe("CALL", () => {
         expect(Evaler.memory[0].get("test")).to.be.equal(5);
     });
 
+    it("All args + Array.map", () => {
+        const Evaler = new Interpreter(Buffer.from([
+            0x0, 0x0,
+            OP_CODES.FN, 0x0, 0xF,
+            OP_CODES.PUSH_ARGS,
+            OP_CODES.ACCESS_ALIAS, 0xC, // Alias for map
+            OP_CODES.FN, 0x0, 0x6,
+            OP_CODES.PUSH_OWN_ARG, 0x0,
+            OP_CODES.PUSH_8, 0x1,
+            OP_CODES.ADD,
+            OP_CODES.RETURN,
+            OP_CODES.CALL, 0x1,
+            OP_CODES.RETURN
+        ]));
+        Evaler.interpret();
+        expect(Evaler.stack.pop()(1, 2, 3, 4, 5)).members([2, 3, 4, 5, 6]);
+    });
+
     it("Native-native function calling custom function", () => {
         const Evaler = new Interpreter(Buffer.from([
             0x0, 0x1,
@@ -124,7 +142,7 @@ describe("CALL", () => {
 
     it("2 separate function calls", () => {
         const Evaler = new Interpreter(Buffer.from([
-            0x0, 0x3,
+            0x0, 0x2,
             OP_CODES.FN, 0x0, 0x6,
             OP_CODES.PUSH_ARG, 0x0,
             OP_CODES.PUSH_ARG, 0x1,

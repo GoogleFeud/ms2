@@ -79,7 +79,7 @@ console.log("Function creation + call\n");
     console.log(`Javascript (${res}): `, performance.now() - time1);
 
     const Evaler = new Interpreter(Buffer.from([
-        0x0, 0x2,
+        0x0, 0x0,
         OP_CODES.FN, 0x0, 0x9,
         OP_CODES.PUSH_ARG, 0x0,
         OP_CODES.PUSH_ARG, 0x1,
@@ -172,7 +172,7 @@ obj.a + obj.b + obj.c;
 
 // Fourth benchmark, adding numbers to map
 (() => {
-    console.log("Adding entries to map:\n\n");
+    console.log("\n\nAdding entries to map:\n\n");
 
     const map = new Map();
     const time1 = performance.now();
