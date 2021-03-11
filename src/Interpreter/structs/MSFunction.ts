@@ -7,8 +7,7 @@ export class MSFunction extends Function {
         // eslint-disable-next-line no-constant-condition
         const endsAt = offset + size;
         const fn = (...args: Array<any>) => {
-            const copiedArgs = totalArgs ? totalArgs.concat(...args):[];
-            const val = ctx.interpret(offset, endsAt, copiedArgs, args); 
+            const val = ctx.interpret(offset, endsAt, totalArgs?.concat(args) || [], args); 
             return val;
         };
         Object.setPrototypeOf(fn, MSFunction.prototype);
