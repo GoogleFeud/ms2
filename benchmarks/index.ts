@@ -10,15 +10,6 @@ const sval = new Sval();
 /** First benchmark - a simple for loop which pushes to an array */
 console.log("For loop:\n");
 (() => {
-    const time1 = performance.now();
-
-    const arr = [];
-    for (let i=0; i < 10; i++) {
-        arr.push(i);
-    }
-
-    console.log(`Javascript (${arr}): `, performance.now() - time1);
-
     
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x2,
@@ -73,10 +64,6 @@ console.log("\n\n");
 // Second benchmark, create a function and call it
 console.log("Function creation + call\n");
 (() => {
-    const time1 = performance.now();
-    const func = (a: number, b: number, c: number) => a + b + c;
-    const res = func(1, 5, 9);
-    console.log(`Javascript (${res}): `, performance.now() - time1);
 
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x0,
@@ -124,13 +111,6 @@ console.log("\n\n");
 (() => {
     console.log("Accessing properties:\n\n");
 
-    const time1 = performance.now();
-
-    const obj = { a: 1, b: 2, c: 3};
-    const res = obj.a + obj.b + obj.c;
-
-    console.log(`Javascript (${res}): `, performance.now() - time1);
-
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x1,
         OP_CODES.PUSH_8, 0x1,
@@ -170,18 +150,11 @@ obj.a + obj.b + obj.c;
     console.log(`Javascript Eval (${res1}): `, performance.now() - time4);
 })();
 
+console.log("\n\n");
+
 // Fourth benchmark, adding numbers to map
 (() => {
-    console.log("\n\nAdding entries to map:\n\n");
-
-    const map = new Map();
-    const time1 = performance.now();
-
-    map.set("A", 1);
-    map.set("B", 2);
-    map.set("C", 3);
-
-    console.log(`Javascript (${[...map.values()]}): `, performance.now() - time1);
+    console.log("Adding entries to map:\n\n");
 
     const Evaler = new Interpreter(Buffer.from([
         0x0, 0x1,

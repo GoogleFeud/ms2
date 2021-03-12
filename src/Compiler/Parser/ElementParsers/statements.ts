@@ -1,6 +1,6 @@
 
 import { ElementParser } from "..";
-import { AST_Define, AST_If, AST_Node, AST_TYPES } from "../ast";
+import { AST_Define, AST_Node, AST_TYPES } from "../ast";
 import { ERROR_TYPES } from "../InputStream";
 import { Token, TOKEN_TYPES } from "../Tokenizer";
 
@@ -79,28 +79,6 @@ DefaultElementParsers["return"] = (parser) => {
     };
 };
 
-DefaultElementParsers["if"] = (parser) => {
-    parser.tokens.consume(); // skips if
-    parser._expectToken(TOKEN_TYPES.PUNC, "(", true, "Expected opening paranthesis before if condition");
-    const condition = parser.parseExpression();
-    if (!condition || condition === 1) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected expression");
-    parser._expectToken(TOKEN_TYPES.PUNC, ")", true, "Expected closing paranthesis after if condition");
-    const then = parser.parseAny();
-    if (!then || then === 1) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Missing if body");
-    if (then.type === AST_TYPES.DEFINE) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Cannot define a variable which immediately gets freed.");
-    let _else;
-    if (parser._isOfType(TOKEN_TYPES.KEYWORD, "else")) {
-        parser.tokens.consume();
-        _else = parser.parseAny();
-        if (!_else || _else === 1) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Missing else body");
-    }
-    return {
-        type: AST_TYPES.IF,
-        condition,
-        then,
-        else: _else
-    } as AST_If;
-};
 
 DefaultElementParsers["struct"] = (parser) => {
     parser.tokens.consume(); // skips struct
