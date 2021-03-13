@@ -1,7 +1,7 @@
 
 import { ElementParser } from "..";
 import { AST_Define, AST_Node, AST_TYPES } from "../ast";
-import { ERROR_TYPES } from "../InputStream";
+
 import { Token, TOKEN_TYPES } from "../Tokenizer";
 
 
@@ -16,7 +16,7 @@ DefaultElementParsers["let"] = (parser) => {
         if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
         token = parser.tokens.peek();
     }
-    if (!final.declarations.length) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected variable name in let statement");
+    if (!final.declarations.length) return parser.tokens.stream.error("Expected variable name in let statement");
     if (token && token.value === "=") {
         parser.tokens.consume(); // Skip = 
         const init = parser.parseExpression();
@@ -35,7 +35,7 @@ DefaultElementParsers["const"] = (parser) => {
         if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
         token = parser.tokens.peek();
     }
-    if (!final.declarations.length) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected variable name in let statement");
+    if (!final.declarations.length) return parser.tokens.stream.error("Expected variable name in let statement");
     if (token && token.value === "=") {
         parser.tokens.consume(); // Skip = 
         const init = parser.parseExpression();
@@ -48,10 +48,10 @@ DefaultElementParsers["const"] = (parser) => {
 DefaultElementParsers["meta"] = (parser) => {
     parser.tokens.consume(); // skips meta
     const name = parser.tokens.consume() || {value: "", type: -1};
-    if (!name || name.type !== TOKEN_TYPES.ID) parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Invalid meta name");
+    if (!name || name.type !== TOKEN_TYPES.ID) parser.tokens.stream.error("Invalid meta name");
     if (!parser._expectToken(TOKEN_TYPES.OP, "=")) return;
     const value = parser.tokens.consume();
-    if (!value) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Value of meta tag is required");
+    if (!value) return parser.tokens.stream.error("Value of meta tag is required");
     switch (value.type) {
     case TOKEN_TYPES.STRING:
         parser.meta[name.value] = value.value;
@@ -63,10 +63,10 @@ DefaultElementParsers["meta"] = (parser) => {
         if (value.value === "true") parser.meta[name.value] = true;
         else if (value.value === "false") parser.meta[name.value] = false;
         else if (value.value === "null") parser.meta[name.value] = undefined;
-        else return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Meta value must be a string, a number, a boolean or null");
+        else return parser.tokens.stream.error("Meta value must be a string, a number, a boolean or null");
         break;
     default: 
-        parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Meta value must be a string, a number, a boolean or null");
+        parser.tokens.stream.error("Meta value must be a string, a number, a boolean or null");
     }
     return 1;
 };
@@ -83,11 +83,11 @@ DefaultElementParsers["return"] = (parser) => {
 DefaultElementParsers["struct"] = (parser) => {
     parser.tokens.consume(); // skips struct
     const structName = parser.tokens.consume();
-    if (!structName || structName.type !== TOKEN_TYPES.ID) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected struct name after keyword");
+    if (!structName || structName.type !== TOKEN_TYPES.ID) return parser.tokens.stream.error("Expected struct name after keyword");
     parser._expectToken(TOKEN_TYPES.PUNC, "{", true, "Expected curly bracket after struct name");
     const fields = [];
     while (!parser._isOfType(TOKEN_TYPES.PUNC, "}")) {
-        if (!parser._isOfType(TOKEN_TYPES.ID)) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected identifier name for struct field");
+        if (!parser._isOfType(TOKEN_TYPES.ID)) return parser.tokens.stream.error("Expected identifier name for struct field");
         let optional;
         const fieldName = (parser.tokens.consume() as Token).value;
         if (parser._isOfType(TOKEN_TYPES.PUNC, "?")) {
@@ -102,9 +102,9 @@ DefaultElementParsers["struct"] = (parser) => {
         } else fields.push({name: fieldName, optional});
         if (parser._isOfType(TOKEN_TYPES.PUNC, "}")) break;
         else if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
-        else parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected comma after field declaration");
+        else parser.tokens.stream.error("Expected comma after field declaration");
     }
-    if (fields.length === 0) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "A struct must have at least one field");
+    if (fields.length === 0) return parser.tokens.stream.error("A struct must have at least one field");
     if (!parser._expectToken(TOKEN_TYPES.PUNC, "}", true, "Missing closing curly bracket in struct definition")) return;
     return {
         type: AST_TYPES.STRUCT,

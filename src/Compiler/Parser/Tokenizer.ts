@@ -1,5 +1,5 @@
 
-import {InputStream, ERROR_TYPES, InputStreamSettings} from "./InputStream";
+import {InputStream, InputStreamSettings} from "./InputStream";
 
 export const enum TOKEN_TYPES {
     STRING,
@@ -21,21 +21,18 @@ export const punctuation = ["{", "}", "(", ")", "[", "]", ",", ";", ":", ".", "?
 
 // You're a tokenizer baby
 export class Tokenizer {
-    stream: InputStream
+    stream!: InputStream
     current?: Token
     private inMultilineComment: boolean
     settings?: InputStreamSettings
-    constructor(code: string, settings?: InputStreamSettings) {
-        this.stream = new InputStream(code, settings);
+    constructor(settings?: InputStreamSettings) {
         this.settings = settings;
         this.inMultilineComment = false;
     }
 
-    reuse(code: string) : void {
+    prepare(code: string) {
         this.stream = new InputStream(code, this.settings);
-        this.inMultilineComment = false;
-        delete this.current;
-    } 
+    }
 
     readWhile(predicate: (ch: string) => boolean) : string {
         let str = "";
@@ -49,11 +46,11 @@ export class Tokenizer {
         let num = this.readWhile((ch) => {
             if (ch === ".") {
                 if (hasDot) return false;
-                if (this.stream.peek(1) === "_") this.stream.error(ERROR_TYPES.SYNTAX, "Numeric separators are now allowed after decimal points");
+                if (this.stream.peek(1) === "_") this.stream.error("Numeric separators are now allowed after decimal points");
                 return hasDot = true;
             } else if (ch === "_") {
                 if (hasUnderscore) {
-                    this.stream.error(ERROR_TYPES.SYNTAX, "Only one underscore is allowed as numeric separator");
+                    this.stream.error("Only one underscore is allowed as numeric separator");
                     return true;
                 }
                 return hasUnderscore = true;
@@ -61,7 +58,7 @@ export class Tokenizer {
             return isDigit(ch);
         });
         if (hasUnderscore) {
-            if (num.endsWith("_")) this.stream.error(ERROR_TYPES.SYNTAX, "Numeric separators are not allowed at the end of numeric literals");
+            if (num.endsWith("_")) this.stream.error("Numeric separators are not allowed at the end of numeric literals");
             num = num.replace(/_/g, "");
         }
         return {
@@ -119,7 +116,7 @@ export class Tokenizer {
         else if (isIdStart(char)) return this.readIdent();
         else if (punctuation.includes(char)) return {type: TOKEN_TYPES.PUNC, value: this.stream.consume()};
         else if (operators.includes(char)) return {type: TOKEN_TYPES.OP, value: this.readWhile((ch) => operators.includes(ch))};
-        else this.stream.error(ERROR_TYPES.SYNTAX, `Unexpected token ${char}`);
+        else this.stream.error(`Unexpected token ${char}`);
     }
 
     peek() : Token|undefined {

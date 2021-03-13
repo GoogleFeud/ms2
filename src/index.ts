@@ -1,15 +1,21 @@
 import {performance} from "perf_hooks";
-import {Parser} from "./Compiler/Parser";
+import {Compiler} from "./Compiler";
 import { prettifyError } from "./util";
+import {Interpreter} from "./Interpreter";
 
-const t = performance.now();
-const parser = new Parser(`
-const i = if (a) (if (b) 3) else 2;
-`, {onError: (err, stream) => {
+const evaler = new Compiler({onError: (err, stream) => {
     console.log(prettifyError(err, stream));
 }});
 
-const res = parser.parse();
+const t = performance.now();
+const res = evaler.compile(`
+5 + 5 + 10;
+`, false);
 console.log(performance.now() - t);
-console.dir(res, {depth: 7});
-console.log(parser.meta);
+console.dir(res, {depth: 100});
+if (res instanceof Array) console.log(res);
+else {
+    const interpreter = new Interpreter(res);
+    interpreter.interpret();
+    console.log(interpreter.stack);
+}

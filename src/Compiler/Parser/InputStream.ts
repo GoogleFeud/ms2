@@ -6,7 +6,6 @@ export const enum ERROR_TYPES {
     REFERECE
 }
 
-
 export interface InputStreamSettings {
     onError?: (err: MSError, stream: InputStream) => void
 }
@@ -49,8 +48,8 @@ export class InputStream {
         return this.code.charAt(this.pos) === "";
     }
 
-    error(type: ERROR_TYPES, msg: string) : undefined {
-        const err: MSError = {type, message: msg, line: this.line, col: this.col};
+    error(msg: string) : undefined {
+        const err: MSError = {type: ERROR_TYPES.SYNTAX, message: msg, line: this.line, col: this.col};
         if (this.settings.onError) this.settings.onError(err, this);
         this.errors.push(err);
         return undefined;

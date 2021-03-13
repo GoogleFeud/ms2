@@ -2,7 +2,6 @@
 import { ElementParser } from "..";
 import { AST_Id, AST_Node, AST_TYPES, AST_If } from "../ast";
 
-import { ERROR_TYPES } from "../InputStream";
 import { Token, TOKEN_TYPES } from "../Tokenizer";
 
 const DefaultElementParsers: Record<string|number, ElementParser> = {};
@@ -22,7 +21,7 @@ DefaultElementParsers["fn"] = (parser, _, args) => {
     }
     if (args.skippedParan) parser._expectToken(TOKEN_TYPES.OP, "=>", true, "Expected arrow (=>)");
     const body = parser.parseExpression();
-    if (!body) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Missing function body");
+    if (!body) return parser.tokens.stream.error("Missing function body");
     return {
         type: AST_TYPES.FN,
         params,
@@ -50,7 +49,7 @@ DefaultElementParsers["block"] = (parser) => {
 DefaultElementParsers["!"] = (parser) => {
     parser.tokens.consume(); // skip !
     const exp = parser.parseExpression();
-    if (!exp) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Unexpected unary operator");
+    if (!exp) return parser.tokens.stream.error("Unexpected unary operator");
     return {type: AST_TYPES.NOT, expression: exp};
 };
 
@@ -74,7 +73,7 @@ DefaultElementParsers[TOKEN_TYPES.ID] = (parser, token, hasBeenConsumed) => {
 };
 
 DefaultElementParsers["a."] = (parser, _, {token, optional}) => {
-    if (!parser._isOfType(TOKEN_TYPES.ID)) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected identifier in property access chain");
+    if (!parser._isOfType(TOKEN_TYPES.ID)) return parser.tokens.stream.error("Expected identifier in property access chain");
     return {
         start: token as AST_Node, 
         accessor: parser.tokens.consume() as unknown as AST_Node,
@@ -84,7 +83,7 @@ DefaultElementParsers["a."] = (parser, _, {token, optional}) => {
 };
 
 DefaultElementParsers["a["] = (parser, _, {token, optional}) => {
-    if (parser._isOfType(TOKEN_TYPES.PUNC, "]")) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected expression inside property access chain");
+    if (parser._isOfType(TOKEN_TYPES.PUNC, "]")) return parser.tokens.stream.error("Expected expression inside property access chain");
     const exp = parser.parseExpression();
     if (exp === 1) return 1;
     parser._expectToken(TOKEN_TYPES.PUNC, "]", true, "Expected closing square bracket inside property access chain");
@@ -117,7 +116,7 @@ DefaultElementParsers["array"] = (parser) => {
         els.push(parser.parseExpression() as unknown as AST_Node);
         if (parser._isOfType(TOKEN_TYPES.PUNC, "]")) break;
         else if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
-        else return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected comma after field");
+        else return parser.tokens.stream.error("Expected comma after field");
     }
     if (!parser._expectToken(TOKEN_TYPES.PUNC, "]", true, "Missing closing square bracket in array expression")) return;
     return {
@@ -141,7 +140,7 @@ DefaultElementParsers["init"] = (parser, _, name) => {
         currentPair = [];
         if (parser._isOfType(TOKEN_TYPES.PUNC, "}")) break;
         else if (parser._isOfType(TOKEN_TYPES.PUNC, ",")) parser.tokens.consume();
-        else return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected comma after field");
+        else return parser.tokens.stream.error("Expected comma after field");
     }
     parser._expectToken(TOKEN_TYPES.PUNC, "}", true, "Missing closing bracket in struct instantiation");
     return {
@@ -155,16 +154,16 @@ DefaultElementParsers["if"] = (parser) => {
     parser.tokens.consume(); // skips if
     parser._expectToken(TOKEN_TYPES.PUNC, "(", true, "Expected opening paranthesis before if condition");
     const condition = parser.parseExpression();
-    if (!condition || condition === 1) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Expected expression");
+    if (!condition || condition === 1) return parser.tokens.stream.error("Expected expression");
     parser._expectToken(TOKEN_TYPES.PUNC, ")", true, "Expected closing paranthesis after if condition");
     const then = parser.parseExpression();
-    if (!then || then === 1) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Missing if body");
-    if (then.type === AST_TYPES.DEFINE) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Cannot define a variable which immediately gets freed.");
+    if (!then || then === 1) return parser.tokens.stream.error("Missing if body");
+    if (then.type === AST_TYPES.DEFINE) return parser.tokens.stream.error("Cannot define a variable which immediately gets freed.");
     let _else;
     if (parser._isOfType(TOKEN_TYPES.KEYWORD, "else")) {
         parser.tokens.consume();
         _else = parser.parseExpression();
-        if (!_else || _else === 1) return parser.tokens.stream.error(ERROR_TYPES.SYNTAX, "Missing else body");
+        if (!_else || _else === 1) return parser.tokens.stream.error("Missing else body");
     }
     return {
         type: AST_TYPES.IF,

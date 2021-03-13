@@ -1,9 +1,7 @@
 
+import { CompilerSettings } from ".";
 import { OP_CODES } from "../Interpreter";
-
-export interface ICompilerSettings {
-    bufferSize?: number
-}
+import { TypingResolvable } from "./TypeChecker/types";
 
 
 export class CompilerContext {
@@ -11,13 +9,24 @@ export class CompilerContext {
     offset: number
     lastVariableAddress: number
     variableIndexes: Record<string, number>
+    variableTypings: Record<string, TypingResolvable>
     result: Buffer
     lastOpCode?: number
-    constructor(settings: ICompilerSettings = {}) {
-        this.offset = 0;
+    constructor(settings: CompilerSettings = {}) {
+        this.offset = 2;
         this.lastVariableAddress = 0;
         this.variableIndexes = {};
         this.result = Buffer.alloc(settings.bufferSize || 5000);
+        this.variableTypings = {};
+        this.blockSizes = [];
+    }
+
+    reuse(settings: CompilerSettings = {}) : void {
+        this.offset = 2;
+        this.lastVariableAddress = 0;
+        this.variableIndexes = {};
+        this.result = Buffer.alloc(settings.bufferSize || 5000);
+        this.variableTypings = {};
         this.blockSizes = [];
     }
 
