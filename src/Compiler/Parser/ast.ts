@@ -1,3 +1,5 @@
+import { LOC } from "./InputStream";
+
 export const enum AST_TYPES {
     STRING,
     NUMBER,
@@ -22,10 +24,8 @@ export const enum AST_TYPES {
 
 export type AST_Node = AST_Struct|AST_Struct_Init|AST_Block|AST_String|AST_Number|AST_Boolean|AST_Null|AST_Array|AST_Binary|AST_Not|AST_If|AST_Fn|AST_Block|AST_Access|AST_Call|AST_Return;
 
-export interface AST_Base {
+export interface AST_Base extends LOC {
     type: AST_TYPES
-    line?: number,
-    col?: number
 }
 
 export interface AST_Block extends AST_Base {

@@ -9,7 +9,7 @@ export const enum DEFAULT_TYPING_IDS {
     FUNCTION
 }
 
-export type TypingResolvable = Typing|number;
+export type TypingResolvable = Typing|number|undefined;
 
 export interface Typing {
     id?: number,

@@ -1,10 +1,11 @@
 
-import { InputStream, MSError } from "./InputStream";
 import {Token, Tokenizer, TOKEN_TYPES} from "./Tokenizer";
 
 import ExpressionParsers from "./ElementParsers/expressions";
 import StatementParsers from "./ElementParsers/statements";
 import { AST_Node, SkipParse, AST_TYPES, AST_Id} from "./ast";
+import { PassdownSettings } from "..";
+import { ERROR_TYPES } from "../../util/ErrorCollector";
 
 export type ElementParser = (parser: Parser, token: Token, args?: any) => AST_Node|SkipParse|undefined;
 
@@ -17,18 +18,13 @@ export const OperatorPrecedence: Record<string, number> = {
     "*": 20, "/": 20, "%": 20,
 }; 
 
-export interface ParserOptions {
-    onError?: (err: MSError, steam: InputStream) => void | undefined,
-    stopAfterFirstError?: boolean
-}
-
 export class Parser {
     tokens: Tokenizer
     meta: Record<string, string|number|boolean|undefined>
-    settings: ParserOptions
     stopped?: boolean
-    constructor(settings: ParserOptions = {}) {
-        this.tokens = new Tokenizer(settings);
+    settings: PassdownSettings
+    constructor(settings: PassdownSettings) {
+        this.tokens = new Tokenizer(settings.errors);
         this.settings = settings;
         this.meta = {};
     }
@@ -46,7 +42,9 @@ export class Parser {
                 operator: token.value as string,
                 type: AST_TYPES.BINARY,
                 left,
-                right
+                right,
+                line: token.line,
+                col: token.col
             }, prec);
         }
     }
@@ -93,12 +91,12 @@ export class Parser {
                             }
                             else {
                                 const res = this.parseExpression(id as unknown as AST_Id);
-                                this._expectToken(TOKEN_TYPES.PUNC, ")");
+                                this._expectToken(token, TOKEN_TYPES.PUNC, ")");
                                 return res;
                             }
                         }
                         const exp = this.parseExpression();
-                        this._expectToken(TOKEN_TYPES.PUNC, ")");
+                        this._expectToken(token, TOKEN_TYPES.PUNC, ")");
                         return exp;
                     }
                 }
@@ -107,8 +105,8 @@ export class Parser {
             if (ExpressionParsers[token.value]) return ExpressionParsers[token.value](this, token);
             else if (ExpressionParsers[token.type]) return ExpressionParsers[token.type](this, token);
             else {
-                if (StatementParsers[token.value]) return this.tokens.stream.error(`Unexpected ${token.value} statement. An expression was expected.`);
-                this.tokens.stream.error(`Unexpected token ${token.value}`);
+                if (StatementParsers[token.value]) return this.settings.errors.create(token, ERROR_TYPES.SYNTAX, `Unexpected ${token.value} statement. An expression was expected.`);
+                this.settings.errors.create(token, ERROR_TYPES.SYNTAX, `Unexpected token ${token.value}`);
             }
         })();
         
@@ -128,7 +126,7 @@ export class Parser {
         if (nextToken.value === "?") {
             this.tokens.consume();
             nextToken = this.tokens.peek();
-            if (!nextToken || nextToken.type !== TOKEN_TYPES.PUNC) return this.tokens.stream.error("Unexpectd ?");
+            if (!nextToken || nextToken.type !== TOKEN_TYPES.PUNC) return this.settings.errors.create(token, ERROR_TYPES.SYNTAX, "Unexpectd ?");
             optional = true;
         }
         switch(nextToken.value) {
@@ -143,13 +141,13 @@ export class Parser {
             return this.parseSuffix(t);
         }
         case "(": {
-            if (optional) return this.tokens.stream.error("Unexpectd ?");
+            if (optional) return this.settings.errors.create(token, ERROR_TYPES.SYNTAX, "Unexpectd ?");
             const t = ExpressionParsers["call"](this, this.tokens.consume() as Token, token);
             if (!t || t === 1) return token;
             return this.parseSuffix(t);
         }
         case "{": {
-            if (optional) return this.tokens.stream.error("Unexpectd ?");
+            if (optional) return this.settings.errors.create(token, ERROR_TYPES.SYNTAX, "Unexpectd ?");
             if (token.type !== AST_TYPES.ID) return token;
             const t = ExpressionParsers["init"](this, this.tokens.consume() as Token, token);
             if (!t || t === 1) return token;
@@ -157,23 +155,23 @@ export class Parser {
         }
         default: {
             if (nextToken.value === ";") this.tokens.consume();
-            if (optional) return this.tokens.stream.error("Unexpectd ?");
+            if (optional) return this.settings.errors.create(token, ERROR_TYPES.SYNTAX, "Unexpectd ?");
             return token;
         }
         }
     }
 
     parseExpression(token?: AST_Node) : AST_Node|SkipParse|undefined {
-        return this._makeFullAST(this.maybeBinary(token || this.parseAtom()));
+        return this.maybeBinary(token || this.parseAtom());
     }
 
     parseStatement() : AST_Node|SkipParse|undefined {
         const token = this.tokens.peek();
-        if (token && token.type === TOKEN_TYPES.KEYWORD && StatementParsers[token.value]) return this._makeFullAST(StatementParsers[token.value](this, token));
+        if (token && token.type === TOKEN_TYPES.KEYWORD && StatementParsers[token.value]) return StatementParsers[token.value](this, token);
     }
 
     parseAny() {
-        return this._makeFullAST(this.parseStatement() || this.parseExpression());
+        return this.parseStatement() || this.parseExpression();
     }
 
     parse(code: string) : Array<AST_Node> {
@@ -192,10 +190,10 @@ export class Parser {
         return res;
     }
 
-    _expectToken(type: TOKEN_TYPES, val?: string, consume = true, error?: string) : boolean {
+    _expectToken(tok: Token, type: TOKEN_TYPES, val?: string, consume = true, error?: string) : boolean {
         const token = consume ? this.tokens.consume():this.tokens.peek();
         if (token && token.type === type && (!val || token.value === val)) return true;
-        this.tokens.stream.error(error || `Expected ${val}, found ${token?.value || "nothing"}`);
+        this.settings.errors.create(token || tok, ERROR_TYPES.SYNTAX, error || `Expected ${val}, found ${token?.value || "nothing"}`);
         return false;
     }
 
@@ -204,11 +202,5 @@ export class Parser {
         return token && token.type === type && (!val || val === token.value);
     }
 
-    _makeFullAST(node: AST_Node|SkipParse|undefined) : AST_Node|SkipParse|undefined {
-        if (!node || node === 1) return node;
-        node.col = this.tokens.stream.col;
-        node.line = this.tokens.stream.line;
-        return node;
-    }
 } 
 

@@ -1,13 +1,20 @@
 
-import {Parser, ParserOptions} from "./Parser";
+import {Parser} from "./Parser";
 import {CompilerContext} from "./Context";
 import {TypeChecker} from "./TypeChecker";
-import { ERROR_TYPES, MSError } from "./Parser/InputStream";
 import { AST_Binary, AST_Boolean, AST_Define, AST_Id, AST_Node, AST_Number, AST_String, AST_TYPES } from "./Parser/ast";
 import { DEFAULT_TYPING_IDS, TypingResolvable} from "./TypeChecker/types";
 import { OP_CODES } from "../Interpreter";
+import { ErrorCollector, ERROR_TYPES, MSError } from "../util/ErrorCollector";
 
-export interface CompilerSettings extends ParserOptions {
+
+export interface PassdownSettings {
+    stopAfterFirstError?: boolean,
+    errors: ErrorCollector
+}
+
+export interface CompilerSettings { 
+    stopAfterFirstError?: boolean,
     forbiddenKeywords?: Array<string>,
     bufferSize?: number
 }
@@ -17,21 +24,21 @@ export class Compiler {
     parser: Parser
     types: TypeChecker
     ctx: CompilerContext
-    private errors: Array<MSError>
+    errors: ErrorCollector
     constructor(options: CompilerSettings = {}) {
         this.settings = options;
-        this.parser = new Parser(options);
+        this.errors = new ErrorCollector();
+        this.parser = new Parser({stopAfterFirstError: options.stopAfterFirstError, errors: this.errors});
         this.types = new TypeChecker();
         this.ctx = new CompilerContext(options);
-        this.errors = [];
     }
 
     compile(code: string, clearCtx = true) : Buffer|Array<MSError> {
         const parsedContent = this.parser.parse(code);
-        if (this.parser.tokens.stream.errors.length) {
-            const errs = this.parser.tokens.stream.errors;
-            this.parser.tokens.stream.errors = [];
-            return errs;
+        if (this.errors.errors.length) {
+            const errors = this.errors.errors;
+            this.errors.reset();
+            return errors;
         }
         for (const ast of parsedContent) {
             if (!ast) continue;
@@ -44,7 +51,7 @@ export class Compiler {
     }
 
     compileAST(ast: AST_Node) : TypingResolvable {
-        if (this.errors.length) return DEFAULT_TYPING_IDS.UNKNOWN;
+        if (this.errors.errors.length) return DEFAULT_TYPING_IDS.UNKNOWN;
         switch(ast.type) {
         case AST_TYPES.NUMBER:
             this.ctx.addNumber((ast as AST_Number).value, true);
@@ -62,7 +69,7 @@ export class Compiler {
             const el = ast as AST_Binary;
             switch(el.operator) {
             case "==":
-                if (!this.types.compatible(this.compileAST(el.left), this.compileAST(el.right))) return this._error(el, ERROR_TYPES.TYPE, "Comparison will always return false because the types of the operands are incompatible.");
+                if (!this.types.compatible(this.compileAST(el.left), this.compileAST(el.right))) return this.errors.create(el, ERROR_TYPES.TYPE, "Comparison will always return false because the types of the operands are incompatible.");
                 this.ctx.addOpCode(OP_CODES.EQUAL);
                 return DEFAULT_TYPING_IDS.BOOLEAN;
             case "+": {
@@ -70,7 +77,7 @@ export class Compiler {
                 const rightType = this.compileAST(el.right);
                 const isLeftString = this.types.is(leftType, DEFAULT_TYPING_IDS.STRING);
                 const isRightString = this.types.is(rightType, DEFAULT_TYPING_IDS.STRING);
-                if ((!isLeftString && !this.types.is(leftType, DEFAULT_TYPING_IDS.NUMBER)) || (!isRightString && !this.types.is(rightType, DEFAULT_TYPING_IDS.NUMBER))) return this._error(el, ERROR_TYPES.TYPE, "Cannot add values different than strings or numbers");
+                if ((!isLeftString && !this.types.is(leftType, DEFAULT_TYPING_IDS.NUMBER)) || (!isRightString && !this.types.is(rightType, DEFAULT_TYPING_IDS.NUMBER))) return this.errors.create(el, ERROR_TYPES.TYPE, "Cannot add values different than strings or numbers");
                 this.ctx.addOpCode(OP_CODES.ADD);
                 return isLeftString || isRightString ? DEFAULT_TYPING_IDS.STRING:DEFAULT_TYPING_IDS.NUMBER;
             }
@@ -91,7 +98,7 @@ export class Compiler {
             const declarationLen = el.declarations.length;
             for (let i=0; i < declarationLen; i++) {
                 const declaration = el.declarations[i];
-                if (declaration in this.ctx.variableIndexes) return this._error(el, ERROR_TYPES.SYNTAX, `${declaration} has already been declared`);
+                if (declaration in this.ctx.variableIndexes) return this.errors.create(el, ERROR_TYPES.SYNTAX, `${declaration} has already been declared`);
                 
                 this.ctx.variableIndexes[declaration] = this.ctx.lastVariableAddress++;
                 this.ctx.variableTypings[declaration] = type;
@@ -102,19 +109,12 @@ export class Compiler {
         }
         case AST_TYPES.ID: {
             const elVal = (ast as AST_Id).value;
-            if (this.ctx.variableIndexes[elVal] === undefined) return this._error(ast, ERROR_TYPES.SYNTAX, `${elVal} is not defined`);
+            if (this.ctx.variableIndexes[elVal] === undefined) return this.errors.create(ast, ERROR_TYPES.SYNTAX, `${elVal} is not defined`);
             this.ctx.addOpCode(OP_CODES.PUSH_VAR);
             this.ctx.addUnsigned16(this.ctx.variableIndexes[elVal]);
             return this.ctx.variableTypings[elVal];
         }
         }
-        return DEFAULT_TYPING_IDS.UNKNOWN;
-    }
-
-    private _error(ast: AST_Node, type: ERROR_TYPES, message: string) : TypingResolvable {
-        const err = {type, message, line: ast.line || 0, col: ast.col || 0};
-        this.errors?.push(err);
-        if (this.settings.onError) this.settings.onError(err, this.parser.tokens.stream);
         return DEFAULT_TYPING_IDS.UNKNOWN;
     }
 

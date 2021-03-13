@@ -1,5 +1,6 @@
 
-import {InputStream, InputStreamSettings} from "./InputStream";
+import { ErrorCollector, ERROR_TYPES } from "../../util/ErrorCollector";
+import {InputStream, LOC} from "./InputStream";
 
 export const enum TOKEN_TYPES {
     STRING,
@@ -10,9 +11,11 @@ export const enum TOKEN_TYPES {
     PUNC
 }
 
-export interface Token {
+export interface Token extends LOC {
     type: TOKEN_TYPES,
-    value: string|number
+    value: string|number,
+    line: number,
+    col: number
 }
 
 export const keywords = ["if", "loop", "else", "export", "meta", "let", "const", "true", "false", "null", "return", "struct"];
@@ -24,14 +27,14 @@ export class Tokenizer {
     stream!: InputStream
     current?: Token
     private inMultilineComment: boolean
-    settings?: InputStreamSettings
-    constructor(settings?: InputStreamSettings) {
-        this.settings = settings;
+    errors: ErrorCollector
+    constructor(errors: ErrorCollector) {
+        this.errors = errors;
         this.inMultilineComment = false;
     }
 
     prepare(code: string) {
-        this.stream = new InputStream(code, this.settings);
+        this.stream = new InputStream(code);
     }
 
     readWhile(predicate: (ch: string) => boolean) : string {
@@ -43,14 +46,15 @@ export class Tokenizer {
     readNumber() : Token {
         let hasDot = false;
         let hasUnderscore = false;
+        const startingLoc = this.stream.getLOC();
         let num = this.readWhile((ch) => {
             if (ch === ".") {
                 if (hasDot) return false;
-                if (this.stream.peek(1) === "_") this.stream.error("Numeric separators are now allowed after decimal points");
+                if (this.stream.peek(1) === "_") this.errors.create(startingLoc, ERROR_TYPES.SYNTAX, "Numeric separators are now allowed after decimal points");
                 return hasDot = true;
             } else if (ch === "_") {
                 if (hasUnderscore) {
-                    this.stream.error("Only one underscore is allowed as numeric separator");
+                    this.errors.create(startingLoc, ERROR_TYPES.SYNTAX, "Only one underscore is allowed as numeric separator");
                     return true;
                 }
                 return hasUnderscore = true;
@@ -58,26 +62,30 @@ export class Tokenizer {
             return isDigit(ch);
         });
         if (hasUnderscore) {
-            if (num.endsWith("_")) this.stream.error("Numeric separators are not allowed at the end of numeric literals");
+            if (num.endsWith("_")) this.errors.create(startingLoc, ERROR_TYPES.SYNTAX, "Numeric separators are not allowed at the end of numeric literals");
             num = num.replace(/_/g, "");
         }
         return {
             type: TOKEN_TYPES.NUMBER,
-            value: parseFloat(num)
+            value: parseFloat(num),
+            ...startingLoc
         };
     }
 
     readIdent() : Token {
+        const startingLoc = this.stream.getLOC();
         const id = this.readWhile(isId);
         return {
             type: keywords.includes(id) ? TOKEN_TYPES.KEYWORD:TOKEN_TYPES.ID,
-            value: id
+            value: id,
+            ...startingLoc
         };
     }
 
     readString() : Token {
         let escaped = false;
         let str = "";
+        const startingLoc = this.stream.getLOC();
         this.stream.consume(); // consume the "
         while (!this.stream.isEOF()) {
             const ch = this.stream.consume();
@@ -89,7 +97,7 @@ export class Tokenizer {
             else if (ch === "\"") break;
             else str += ch;
         }
-        return {type: TOKEN_TYPES.STRING, value: str};
+        return {type: TOKEN_TYPES.STRING, value: str, ...startingLoc};
     }
 
     processNext() : Token|undefined {
@@ -114,9 +122,9 @@ export class Tokenizer {
         else if (char === "\"") return this.readString();
         else if (isDigit(char)) return this.readNumber();
         else if (isIdStart(char)) return this.readIdent();
-        else if (punctuation.includes(char)) return {type: TOKEN_TYPES.PUNC, value: this.stream.consume()};
-        else if (operators.includes(char)) return {type: TOKEN_TYPES.OP, value: this.readWhile((ch) => operators.includes(ch))};
-        else this.stream.error(`Unexpected token ${char}`);
+        else if (punctuation.includes(char)) return {type: TOKEN_TYPES.PUNC, value: this.stream.consume(), ...this.stream.getLOC()};
+        else if (operators.includes(char)) return {type: TOKEN_TYPES.OP, value: this.readWhile((ch) => operators.includes(ch)), ...this.stream.getLOC()};
+        else this.errors.create(this.stream.getLOC(), ERROR_TYPES.SYNTAX, `Unexpected token ${char}`);
     }
 
     peek() : Token|undefined {

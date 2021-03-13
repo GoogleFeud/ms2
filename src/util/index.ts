@@ -1,6 +1,7 @@
 
-import { InputStream, MSError } from "../Compiler/Parser/InputStream";
+import { InputStream } from "../Compiler/Parser/InputStream";
 import {PropertyAlias} from "./default_property_alias";
+import { MSError } from "./ErrorCollector";
 
 
 const _typeToString: Record<number, string> = {
