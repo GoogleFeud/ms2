@@ -1,7 +1,7 @@
 
-import { CompilerSettings } from ".";
-import { OP_CODES } from "../Interpreter";
-import { TypingResolvable } from "./TypeChecker/types";
+import { CompilerSettings } from "..";
+import { OP_CODES } from "../../Interpreter";
+import { TypingResolvable } from "../TypeChecker/types";
 
 
 export class CompilerContext {

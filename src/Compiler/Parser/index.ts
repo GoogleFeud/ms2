@@ -30,23 +30,24 @@ export class Parser {
     }
 
     private maybeBinary(left: AST_Node|SkipParse|undefined, prec = 0) : AST_Node|SkipParse|undefined {
-        if (!left || left === 1) return;
+        if (!left || left === 1) return left;
         const token = this.tokens.peek();
         if (!token || token.type !== TOKEN_TYPES.OP || !OperatorPrecedence[token.value]) return left;
         const otherPrec = OperatorPrecedence[token.value];
-        if (otherPrec >= prec) {
+        if (otherPrec > prec) {
             this.tokens.consume(); // Skip the operator
             const right = this.maybeBinary(this.parseAtom(), otherPrec);
-            if (!right || right === 1) return;
+            if (!right || right === 1) return left;
             return this.maybeBinary({
                 operator: token.value as string,
-                type: AST_TYPES.BINARY,
+                type: token.value === "=" ? AST_TYPES.ASSIGN:AST_TYPES.BINARY,
                 left,
                 right,
                 line: token.line,
                 col: token.col
             }, prec);
-        }
+        } 
+        return left;
     }
 
 
