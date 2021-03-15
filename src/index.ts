@@ -12,11 +12,11 @@ evaler.errors.on("error", (err: MSError) => {
 
 const t = performance.now();
 const res = evaler.compile(`
-const res = 8.5 % 1;
+let res = 1 == 6;
+res = null;
 res;
 `, false);
 console.log("Compilation: ", performance.now() - t);
-console.log(res);
 if (res instanceof Array) console.log(res);
 else {
     const interpreter = new Interpreter(res);

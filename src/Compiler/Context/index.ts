@@ -3,6 +3,12 @@ import { CompilerSettings } from "..";
 import { OP_CODES } from "../../Interpreter";
 import { TypingResolvable } from "../TypeChecker/types";
 
+export const enum CONTEXT_TYPES {
+    UNKNOWN,
+    IN_FUNCTION_PARAM,
+    IN_IF_CONDITION,
+    IN_VARIABLE_INIT,
+}
 
 export class CompilerContext {
     blockSizes: Array<number>
@@ -12,6 +18,8 @@ export class CompilerContext {
     variableTypings: Record<string, TypingResolvable>
     result: Buffer
     lastOpCode?: number
+    type: CONTEXT_TYPES
+    private _lastType: CONTEXT_TYPES
     constructor(settings: CompilerSettings = {}) {
         this.offset = 2;
         this.lastVariableAddress = 0;
@@ -19,6 +27,8 @@ export class CompilerContext {
         this.result = Buffer.alloc(settings.bufferSize || 5000);
         this.variableTypings = {};
         this.blockSizes = [];
+        this.type = CONTEXT_TYPES.UNKNOWN;
+        this._lastType = CONTEXT_TYPES.UNKNOWN;
     }
 
     reuse(settings: CompilerSettings = {}) : void {
@@ -131,6 +141,16 @@ export class CompilerContext {
             this.blockSizes[this.blockSizes.length - 1] += funcSize;
         }
         return funcSize;
+    }
+
+    setType(type: CONTEXT_TYPES) {
+        this._lastType = this.type;
+        this.type = type;
+    }
+
+    clearType() {
+        this.type = this._lastType;
+        this._lastType = CONTEXT_TYPES.UNKNOWN;
     }
 
     erase(bytes: number) : void {

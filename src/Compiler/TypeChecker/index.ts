@@ -16,6 +16,7 @@ export function compatible(type1: TypingResolvable, type2: TypingResolvable) : b
     const left = resolve(type1);
     const right = resolve(type2);
     if (!left || !right) return false;
+    if (left.nullable && is(right, TYPING_IDS.NULL)) return true;
     if (left.extends === TYPING_IDS.FUNCTION && right.extends === TYPING_IDS.FUNCTION) return compareParams(left, right);
     return (
         left.extends !== undefined && left.extends === right.extends

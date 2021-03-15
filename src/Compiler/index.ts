@@ -1,6 +1,6 @@
 
 import {Parser} from "./Parser";
-import {CompilerContext} from "./Context";
+import {CompilerContext, CONTEXT_TYPES} from "./Context";
 import { AST_Binary, AST_Boolean, AST_Define, AST_Id, AST_Node, AST_Number, AST_String, AST_TYPES } from "./Parser/ast";
 import { OP_CODES } from "../Interpreter";
 import { ErrorCollector, ERROR_TYPES, MSError } from "../util/ErrorCollector";
@@ -20,9 +20,9 @@ export interface CompilerSettings {
 
 export class Compiler {
     settings: CompilerSettings
-    parser: Parser
-    ctx: CompilerContext
-    errors: ErrorCollector
+    readonly parser: Parser
+    readonly ctx: CompilerContext
+    readonly errors: ErrorCollector
     constructor(options: CompilerSettings = {}) {
         this.settings = options;
         this.errors = new ErrorCollector();
@@ -40,6 +40,12 @@ export class Compiler {
         for (const ast of parsedContent) {
             if (!ast) continue;
             this.compileAST(ast);
+        }
+        if (this.errors.errors.length) {
+            const errors = this.errors.errors;
+            this.errors.reset();
+            if (clearCtx) this.ctx.reuse(this.settings);
+            return errors;
         }
         const res = this.ctx.result.slice(0, this.ctx.offset);
         res.writeUInt16BE(this.ctx.lastVariableAddress);
@@ -64,6 +70,7 @@ export class Compiler {
             return true;
         case AST_TYPES.BINARY: {
             const el = ast as AST_Binary;
+            if (!resolveType(ast, this)) return;
             switch(el.operator) {
             case "==": {
                 const el = ast as AST_Binary;
@@ -76,35 +83,30 @@ export class Compiler {
             case "+": {
                 if (!this.compileAST(el.left)) return;
                 if (!this.compileAST(el.right)) return;
-                if (!resolveType(ast, this)) return;
                 this.ctx.addOpCode(OP_CODES.ADD);
                 return true;
             }
             case "-": {
                 if (!this.compileAST(el.left)) return;
                 if (!this.compileAST(el.right)) return;
-                if (!resolveType(ast, this)) return;
                 this.ctx.addOpCode(OP_CODES.SUB);
                 return true;
             }
             case "*": {
                 if (!this.compileAST(el.left)) return;
                 if (!this.compileAST(el.right)) return;
-                if (!resolveType(ast, this)) return;
                 this.ctx.addOpCode(OP_CODES.MUL);
                 return true;
             }
             case "/": {
                 if (!this.compileAST(el.left)) return;
                 if (!this.compileAST(el.right)) return;
-                if (!resolveType(ast, this)) return;
                 this.ctx.addOpCode(OP_CODES.DIV);
                 return true;
             }
             case "%": {
                 if (!this.compileAST(el.left)) return;
                 if (!this.compileAST(el.right)) return;
-                if (!resolveType(ast, this)) return;
                 this.ctx.addOpCode(OP_CODES.MOD);
                 return true;
             }
@@ -113,10 +115,33 @@ export class Compiler {
             }
             break;
         }
+        case AST_TYPES.ASSIGN: {
+            const el = ast as AST_Binary;
+            switch(el.left.type) {
+            case AST_TYPES.ID: {
+                const valueName = (el.left as AST_Id).value;
+                if (this.ctx.variableIndexes[valueName] === undefined) return this.errors.create(el.left, ERROR_TYPES.REFERECE, `${valueName} is not defined`);
+                if (!resolveType(el, this)) return;
+                if (!this.compileAST(el.right)) return;
+                this.ctx.addOpCode(this.ctx.type === CONTEXT_TYPES.UNKNOWN ? OP_CODES.ASSIGN_POP:OP_CODES.ASSIGN);
+                this.ctx.addUnsigned16(this.ctx.variableIndexes[valueName]);
+                break;
+            }
+            case AST_TYPES.ACCESS:
+                break;
+            default:
+                return this.errors.create(el.left, ERROR_TYPES.SYNTAX, "Invalid left-hand side in assignment");
+            }
+            break;
+        }
         case AST_TYPES.DEFINE: {
             const el = ast as AST_Define;
             const type = resolveType(el, this);
-            if (el.initializor) this.compileAST(el.initializor);
+            if (el.initializor) {
+                this.ctx.setType(CONTEXT_TYPES.IN_VARIABLE_INIT);
+                this.compileAST(el.initializor);
+                this.ctx.clearType();
+            }
             else this.ctx.addUndefinedOp();
             const declarationLen = el.declarations.length;
             for (let i=0; i < declarationLen; i++) {
