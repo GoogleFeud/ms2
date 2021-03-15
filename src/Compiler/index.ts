@@ -101,6 +101,13 @@ export class Compiler {
                 this.ctx.addOpCode(OP_CODES.DIV);
                 return true;
             }
+            case "%": {
+                if (!this.compileAST(el.left)) return;
+                if (!this.compileAST(el.right)) return;
+                if (!resolveType(ast, this)) return;
+                this.ctx.addOpCode(OP_CODES.MOD);
+                return true;
+            }
             default:
                 break;
             }

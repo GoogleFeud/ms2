@@ -18,6 +18,7 @@ export const enum OP_CODES {
     MUL,
     SUB,
     INC,
+    MOD,
     INC_POP,
     DEC,
     DEC_POP,
@@ -175,6 +176,12 @@ export class Interpreter {
             case OP_CODES.MUL:
                 stack.push(stack.pop() * stack.pop());
                 break;
+            case OP_CODES.MOD: {
+                const first = stack.pop();
+                const second = stack.pop();
+                stack.push(second % first);
+                break;
+            }
             case OP_CODES.INC:
                 stack.push(++memory[code.readUInt16BE(offset)]);
                 offset += 2;

@@ -12,15 +12,16 @@ evaler.errors.on("error", (err: MSError) => {
 
 const t = performance.now();
 const res = evaler.compile(`
-1 + 55 / 10 * 10 / 5 + 55 / 5
+const res = 8.5 % 1;
+res;
 `, false);
 console.log("Compilation: ", performance.now() - t);
-console.dir(res, {depth: 100});
+console.log(res);
 if (res instanceof Array) console.log(res);
 else {
     const interpreter = new Interpreter(res);
     const b = performance.now();
     interpreter.interpret();
     console.log("Interpretation: ", performance.now() - b);
-    console.log(interpreter.stack, evaler.ctx.variableTypings);
+    console.log(interpreter.stack);
 }

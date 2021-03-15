@@ -40,6 +40,7 @@ export function resolveType(node: AST_Node, compiler: Compiler) : TypingResolvab
         case "-":
         case "*":
         case "/":
+        case "%":
             if (!is(resolveType(ast.left, compiler), TYPING_IDS.NUMBER) || !is(resolveType(ast.right, compiler), TYPING_IDS.NUMBER)) return compiler.errors.create(ast, ERROR_TYPES.TYPE, "You can only use this operator on numbers");
             return TYPING_IDS.NUMBER;
         case ">":
